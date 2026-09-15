@@ -1,0 +1,10 @@
+[package]
+name = "todoist-tui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+todoist-sdk = { path = "../sdk" }
+tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
+log = "0.4.34"
+flexi_logger = "0.31.10"
