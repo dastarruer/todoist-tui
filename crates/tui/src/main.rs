@@ -5,6 +5,21 @@ use todoist_sdk::APIClient;
 
 #[tokio::main]
 async fn main() {
+    bootstrap_app().unwrap_or_else(|e| {
+        log::error!("Error starting app: {e}");
+        std::process::exit(1);
+    });
+
+    let key = todoist_sdk::retrieve_api_key().unwrap_or_else(|e| {
+        log::error!("Error retrieving API key: {e}");
+        std::process::exit(1);
+    });
+    let client = APIClient::new(key);
+    let tasks = client.tasks().await;
+    println!("{tasks:?}");
+}
+
+fn bootstrap_app() -> anyhow::Result<()> {
     let log_dir = std::env::var("XDG_STATE_HOME")
         .map_or_else(
             |_| {
@@ -27,14 +42,6 @@ async fn main() {
             flexi_logger::Naming::Numbers,
             flexi_logger::Cleanup::KeepLogFiles(5),
         )
-        .start()
-        .expect("Logger failed to start");
-
-    let key = todoist_sdk::retrieve_api_key().unwrap_or_else(|e| {
-        log::error!("Error retrieving API key: {e}");
-        std::process::exit(1);
-    });
-    let client = APIClient::new(key);
-    let tasks = client.tasks().await;
-    println!("{tasks:?}");
+        .start();
+    Ok(())
 }
