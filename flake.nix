@@ -84,7 +84,6 @@
         ...
       }: {
         default = pkgs.mkShell {
-          shellHook = preCommitCheck.shellHook;
           packages = with pkgs;
             [
               rustToolchain
@@ -95,7 +94,17 @@
             ++ [
               self.formatter.${system}
               pkgs.nixd
+            ]
+            ++ [
+              secretspec
             ];
+
+          shellHook = ''
+            ${preCommitCheck.shellHook}
+
+            # Set up secrets
+            eval "$(secretspec export)"
+          '';
 
           # Required by rust-analyzer
           env.RUST_SRC_PATH = "${pkgs.rustToolchain}/lib/rustlib/src/rust/library";
