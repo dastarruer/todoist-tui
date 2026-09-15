@@ -1,8 +1,10 @@
-use std::{env::var, path::PathBuf};
+use std::{env::var, fmt::Display, path::PathBuf, str::FromStr};
 
 use flexi_logger::{FileSpec, Logger};
+use reqwest::{Client, Url};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let log_dir = std::env::var("XDG_STATE_HOME")
         .map_or_else(
             |_| {
@@ -32,11 +34,50 @@ fn main() {
         log::error!("Error retrieving API key: {e}");
         std::process::exit(1);
     });
-    println!("{}", key.0);
+    let client = APIClient::new(key);
+    let tasks = client.tasks().await;
+    println!("{tasks:?}");
+}
+
+struct APIClient {
+    client: Client,
+    key: TodoistAPIKey,
+}
+
+impl APIClient {
+    fn new(key: TodoistAPIKey) -> Self {
+        let client = Client::new();
+        Self { client, key }
+    }
+
+    fn base_url() -> Url {
+        Url::from_str("https://api.todoist.com").expect("base API URL should be valid")
+    }
+
+    async fn tasks(&self) -> anyhow::Result<String> {
+        let url = Self::base_url()
+            .join("api/v1/tasks")
+            .expect("joined URL should be valid");
+        Ok(self
+            .client
+            .get(url)
+            .bearer_auth(&self.key)
+            .send()
+            .await?
+            .error_for_status()?
+            .text()
+            .await?)
+    }
 }
 
 #[derive(Debug)]
 struct TodoistAPIKey(String);
+
+impl Display for TodoistAPIKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 fn retrieve_api_key() -> anyhow::Result<TodoistAPIKey> {
     Ok(TodoistAPIKey(var("API_KEY")?))
