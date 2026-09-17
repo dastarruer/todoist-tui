@@ -97,16 +97,27 @@ pub struct APIClient {
 }
 
 impl APIClient {
+    #[must_use]
     pub fn new(key: TodoistAPIKey) -> Self {
         let client = Client::new();
-        Self { client, key }
+        Self { key, client }
     }
 
     fn base_url() -> Url {
         Url::from_str("https://api.todoist.com").expect("base API URL should be valid")
     }
 
+    /// Gets all active tasks for the user.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    ///
+    /// - There was an error when sending a request.
+    /// - Any status code between `400` and `599` was returned.
+    /// - The response was not successfully decoded.
     pub async fn tasks(&self) -> anyhow::Result<Vec<Task>> {
+        #[expect(clippy::missing_panics_doc, reason = "infallible")]
         let url = Self::base_url()
             .join("api/v1/tasks")
             .expect("joined URL should be valid");
@@ -134,6 +145,13 @@ impl Display for TodoistAPIKey {
     }
 }
 
+/// Retrieves the Todoist API key from the user's system.
+///
+/// # Errors
+///
+/// Returns an error if:
+///
+/// - The `API_KEY` environment variable is not set.
 pub fn retrieve_api_key() -> anyhow::Result<TodoistAPIKey> {
     Ok(TodoistAPIKey(var("API_KEY")?))
 }
@@ -170,7 +188,7 @@ mod tests {
             updated_at: String::from("2025-01-21T21:28:43Z"),
             completed_at: None,
         };
-        pretty_assertions::assert_eq!(task, expected)
+        pretty_assertions::assert_eq!(task, expected);
     }
 
     #[test]
