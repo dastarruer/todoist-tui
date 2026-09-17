@@ -31,7 +31,7 @@ pub struct Task {
     pub parent_id: Option<Id>,
     /// The order of the task. Defines the position of the
     /// task among all the tasks with the same parent.
-    pub child_order: i8,
+    pub child_order: i32,
     /// Task's fractional-indexing order key: tasks sort by
     /// comparing keys lexicographically among siblings
     /// sharing the same project, section and parent task.
@@ -43,7 +43,7 @@ pub struct Task {
     /// The order of the task inside the `Today` or
     /// `Next 7 days` view (a number, where the smallest
     /// value would place the task at the top).
-    pub day_order: i8,
+    pub day_order: i32,
     /// Whether the task's sub-tasks are collapsed.
     pub is_collapsed: bool,
     /// The task's labels (a list of names that may
