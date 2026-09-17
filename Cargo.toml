@@ -1,9 +1,9 @@
-[package]
-name = "todoist-tui"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+resolver = "3"
+members = ["crates/sdk", "crates/tui"]
+default-members = ["crates/tui"]
 
-[lints.clippy]
+[workspace.lints.clippy]
 pedantic = { level = "deny", priority = -1 }
 nursery = { level = "deny", priority = -1 }
 unwrap_used = "deny"
