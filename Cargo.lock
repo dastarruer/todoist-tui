@@ -2019,6 +2019,7 @@ dependencies = [
  "keyring",
  "pretty_assertions",
  "reqwest",
+ "serde",
  "serde_json",
  "tokio",
 ]
