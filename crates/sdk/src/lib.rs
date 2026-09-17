@@ -122,22 +122,34 @@ impl APIClient {
     /// - Any status code between `400` and `599` was returned.
     /// - The response was not successfully decoded.
     pub async fn tasks(&self) -> anyhow::Result<Vec<Task>> {
-        #[expect(clippy::missing_panics_doc, reason = "infallible")]
-        let url = Self::base_url()
-            .join("api/v1/tasks")
-            .expect("joined URL should be valid");
-        let resp = serde_json::from_str::<TasksResponse>(
-            &self
-                .client
-                .get(url)
-                .bearer_auth(&self.key)
-                .send()
-                .await?
-                .error_for_status()?
-                .text()
-                .await?,
-        )?;
-        Ok(resp.results)
+        let mut tasks = Vec::new();
+        let mut cursor = Some(String::new());
+        while cursor.is_some() {
+            #[expect(clippy::missing_panics_doc, reason = "infallible")]
+            let mut url = Self::base_url()
+                .join("api/v1/tasks")
+                .expect("joined URL should be valid");
+            if let Some(c) = &cursor
+                && !c.is_empty()
+            {
+                url.query_pairs_mut().append_pair("cursor", c);
+            }
+
+            let resp = serde_json::from_str::<TasksResponse>(
+                &self
+                    .client
+                    .get(url)
+                    .bearer_auth(&self.key)
+                    .send()
+                    .await?
+                    .error_for_status()?
+                    .text()
+                    .await?,
+            )?;
+            tasks.extend(resp.results);
+            cursor = resp.next_cursor;
+        }
+        Ok(tasks)
     }
 }
 
