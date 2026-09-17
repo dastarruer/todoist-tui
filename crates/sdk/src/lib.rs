@@ -1,4 +1,4 @@
-use std::{env::var, fmt::Display, str::FromStr};
+use std::{env::var, fmt::Display, str::FromStr, time::Duration};
 
 use anyhow::Ok;
 use reqwest::{Client, Url};
@@ -99,7 +99,12 @@ pub struct APIClient {
 impl APIClient {
     #[must_use]
     pub fn new(key: TodoistAPIKey) -> Self {
-        let client = Client::new();
+        #[expect(clippy::missing_panics_doc, reason = "infallible")]
+        let client = Client::builder()
+            .connect_timeout(Duration::from_secs(5))
+            .timeout(Duration::from_secs(10))
+            .build()
+            .expect("client config should be valid");
         Self { key, client }
     }
 
