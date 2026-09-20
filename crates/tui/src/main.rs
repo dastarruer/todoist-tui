@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{env::var, path::PathBuf};
 
 use flexi_logger::{FileSpec, Logger};
 use todoist_sdk::APIClient;
@@ -6,7 +6,7 @@ use todoist_sdk::APIClient;
 #[tokio::main]
 async fn main() {
     bootstrap_app();
-    let key = todoist_sdk::retrieve_api_key().unwrap_or_else(|e| {
+    let key = retrieve_api_key().unwrap_or_else(|e| {
         log::error!("Error retrieving API key: {e}");
         std::process::exit(1);
     });
@@ -39,4 +39,8 @@ fn bootstrap_app() {
             flexi_logger::Cleanup::KeepLogFiles(5),
         )
         .start();
+}
+
+fn retrieve_api_key() -> anyhow::Result<String> {
+    Ok(var("API_KEY")?)
 }

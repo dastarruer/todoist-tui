@@ -1,6 +1,9 @@
-use std::{env::var, fmt::Display, str::FromStr, time::Duration};
+pub mod error;
 
-use anyhow::Ok;
+use crate::error::Result;
+
+use std::{str::FromStr, time::Duration};
+
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 
@@ -92,13 +95,13 @@ struct TasksResponse {
 }
 
 pub struct APIClient {
-    pub key: TodoistAPIKey,
+    pub key: String,
     client: Client,
 }
 
 impl APIClient {
     #[must_use]
-    pub fn new(key: TodoistAPIKey) -> Self {
+    pub fn new(key: String) -> Self {
         #[expect(clippy::missing_panics_doc, reason = "infallible")]
         let client = Client::builder()
             .connect_timeout(Duration::from_secs(5))
@@ -121,7 +124,7 @@ impl APIClient {
     /// - There was an error when sending a request.
     /// - Any status code between `400` and `599` was returned.
     /// - The response was not successfully decoded.
-    pub async fn tasks(&self) -> anyhow::Result<Vec<Task>> {
+    pub async fn tasks(&self) -> Result<Vec<Task>> {
         let mut tasks = Vec::new();
         let mut cursor = Some(String::new());
         while cursor.is_some() {
@@ -151,26 +154,6 @@ impl APIClient {
         }
         Ok(tasks)
     }
-}
-
-#[derive(Debug)]
-pub struct TodoistAPIKey(String);
-
-impl Display for TodoistAPIKey {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-/// Retrieves the Todoist API key from the user's system.
-///
-/// # Errors
-///
-/// Returns an error if:
-///
-/// - The `API_KEY` environment variable is not set.
-pub fn retrieve_api_key() -> anyhow::Result<TodoistAPIKey> {
-    Ok(TodoistAPIKey(var("API_KEY")?))
 }
 
 #[cfg(test)]
