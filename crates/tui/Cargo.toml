@@ -8,9 +8,9 @@ todoist-sdk = { path = "../sdk" }
 tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
 log = "0.4.34"
 flexi_logger = "0.31.10"
-anyhow = "1.0.104"
 ratatui = "0.30.2"
 crossterm = "0.29.0"
+color-eyre = "0.6.5"
 
 [lints]
 workspace = true

@@ -1,18 +1,45 @@
-use std::{env::var, path::PathBuf};
+mod app;
+mod ui;
 
+use std::{
+    env::var,
+    io::{self, Stdout},
+    path::PathBuf,
+};
+
+use crossterm::{
+    event::{self, Event, KeyCode},
+    execute,
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+};
 use flexi_logger::{FileSpec, Logger};
+use ratatui::{Terminal, backend::CrosstermBackend};
 use todoist_sdk::APIClient;
 
+use crate::{app::App, ui::ui};
+
 #[tokio::main]
-async fn main() {
+async fn main() -> color_eyre::Result<()> {
+    color_eyre::install()?;
     bootstrap_app();
     let key = retrieve_api_key().unwrap_or_else(|e| {
         log::error!("Error retrieving API key: {e}");
         std::process::exit(1);
     });
     let client = APIClient::new(key);
-    let tasks = client.tasks().await;
-    println!("{tasks:?}");
+    let app = App::new(client).await?;
+
+    let stdout = io::stdout();
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+    enable_raw_mode()?;
+    execute!(terminal.backend_mut(), EnterAlternateScreen)?;
+    run_app(&mut terminal, &app)?;
+    disable_raw_mode()?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    terminal.show_cursor()?;
+
+    Ok(())
 }
 
 fn bootstrap_app() {
@@ -41,6 +68,22 @@ fn bootstrap_app() {
         .start();
 }
 
-fn retrieve_api_key() -> anyhow::Result<String> {
+fn run_app(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    app: &App,
+) -> color_eyre::Result<bool> {
+    loop {
+        terminal.draw(|f| ui(f, app))?;
+        // probably will need to add other keybinds in the future anyways
+        #[allow(clippy::collapsible_if)]
+        if let Event::Key(key) = event::read()? {
+            if key.code == KeyCode::Char('q') {
+                return Ok(true);
+            }
+        }
+    }
+}
+
+fn retrieve_api_key() -> color_eyre::Result<String> {
     Ok(var("API_KEY")?)
 }
