@@ -1,21 +1,28 @@
-use std::{env::var, path::PathBuf};
+mod app;
+mod ui;
 
+use std::{env::var, io::Stdout, path::PathBuf};
+
+use color_eyre::eyre::Context;
+use crossterm::event::{self, Event, KeyCode};
 use flexi_logger::{FileSpec, Logger};
+use ratatui::{Terminal, backend::CrosstermBackend};
 use todoist_sdk::APIClient;
 
+use crate::{app::App, ui::ui};
+
 #[tokio::main]
-async fn main() {
-    bootstrap_app();
-    let key = retrieve_api_key().unwrap_or_else(|e| {
-        log::error!("Error retrieving API key: {e}");
-        std::process::exit(1);
-    });
-    let client = APIClient::new(key);
-    let tasks = client.tasks().await;
-    println!("{tasks:?}");
+async fn main() -> color_eyre::Result<()> {
+    let app = bootstrap_app().await?;
+    let mut terminal = ratatui::init();
+    run_app(&mut terminal, &app)?;
+    ratatui::restore();
+
+    Ok(())
 }
 
-fn bootstrap_app() {
+async fn bootstrap_app() -> color_eyre::Result<App> {
+    color_eyre::install()?;
     let log_dir = std::env::var("XDG_STATE_HOME")
         .map_or_else(
             |_| {
@@ -39,8 +46,28 @@ fn bootstrap_app() {
             flexi_logger::Cleanup::KeepLogFiles(5),
         )
         .start();
+
+    let key = retrieve_api_key().context("unable to retrieve API key")?;
+    let client = APIClient::new(key);
+    App::new(client).await
 }
 
-fn retrieve_api_key() -> anyhow::Result<String> {
+fn run_app(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    app: &App,
+) -> color_eyre::Result<bool> {
+    loop {
+        terminal.draw(|f| ui(f, app))?;
+        // probably will need to add other keybinds in the future anyways
+        #[allow(clippy::collapsible_if)]
+        if let Event::Key(key) = event::read()? {
+            if key.code == KeyCode::Char('q') {
+                return Ok(true);
+            }
+        }
+    }
+}
+
+fn retrieve_api_key() -> color_eyre::Result<String> {
     Ok(var("API_KEY")?)
 }
