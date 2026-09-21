@@ -1,7 +1,7 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
+    style::{Color, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
@@ -49,6 +49,9 @@ pub fn ui(frame: &mut Frame, app: &App) {
     let footer = *chunks
         .get(1)
         .expect("second element of chunks should exist");
-    let hints = Paragraph::new(Line::from("Hello"));
+    let hints = Paragraph::new(Line::from(vec![
+        Span::from("<q> ").blue(),
+        Span::from("quit"),
+    ]));
     frame.render_widget(hints, footer);
 }
