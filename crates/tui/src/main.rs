@@ -3,6 +3,7 @@ mod ui;
 
 use std::{env::var, io::Stdout, path::PathBuf};
 
+use color_eyre::eyre::Context;
 use crossterm::event::{self, Event, KeyCode};
 use flexi_logger::{FileSpec, Logger};
 use ratatui::{Terminal, backend::CrosstermBackend};
@@ -12,15 +13,7 @@ use crate::{app::App, ui::ui};
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
-    color_eyre::install()?;
-    bootstrap_app();
-    let key = retrieve_api_key().unwrap_or_else(|e| {
-        log::error!("Error retrieving API key: {e}");
-        std::process::exit(1);
-    });
-    let client = APIClient::new(key);
-    let app = App::new(client).await?;
-
+    let app = bootstrap_app().await?;
     let mut terminal = ratatui::init();
     run_app(&mut terminal, &app)?;
     ratatui::restore();
@@ -28,7 +21,8 @@ async fn main() -> color_eyre::Result<()> {
     Ok(())
 }
 
-fn bootstrap_app() {
+async fn bootstrap_app() -> color_eyre::Result<App> {
+    color_eyre::install()?;
     let log_dir = std::env::var("XDG_STATE_HOME")
         .map_or_else(
             |_| {
@@ -52,6 +46,10 @@ fn bootstrap_app() {
             flexi_logger::Cleanup::KeepLogFiles(5),
         )
         .start();
+
+    let key = retrieve_api_key().context("unable to retrieve API key")?;
+    let client = APIClient::new(key);
+    App::new(client).await
 }
 
 fn run_app(
