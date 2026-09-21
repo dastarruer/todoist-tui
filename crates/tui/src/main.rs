@@ -1,17 +1,9 @@
 mod app;
 mod ui;
 
-use std::{
-    env::var,
-    io::{self, Stdout},
-    path::PathBuf,
-};
+use std::{env::var, io::Stdout, path::PathBuf};
 
-use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
-};
+use crossterm::event::{self, Event, KeyCode};
 use flexi_logger::{FileSpec, Logger};
 use ratatui::{Terminal, backend::CrosstermBackend};
 use todoist_sdk::APIClient;
@@ -29,15 +21,9 @@ async fn main() -> color_eyre::Result<()> {
     let client = APIClient::new(key);
     let app = App::new(client).await?;
 
-    let stdout = io::stdout();
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-    enable_raw_mode()?;
-    execute!(terminal.backend_mut(), EnterAlternateScreen)?;
+    let mut terminal = ratatui::init();
     run_app(&mut terminal, &app)?;
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
+    ratatui::restore();
 
     Ok(())
 }
