@@ -1,4 +1,4 @@
-use todoist_sdk::{APIClient, Task};
+use todoist_sdk::{APIClient, types::task::Task};
 
 pub struct App {
     _client: APIClient,
