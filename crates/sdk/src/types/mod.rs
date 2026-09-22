@@ -15,6 +15,7 @@ pub struct Uid(pub String);
 /// for more info.
 #[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[non_exhaustive]
+#[serde(rename_all = "snake_case")]
 pub enum Color {
     BerryRed,
     Red,
