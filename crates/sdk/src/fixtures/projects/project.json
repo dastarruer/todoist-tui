@@ -1,0 +1,35 @@
+{
+    "id": "6Jf8VQXxpwv56VQ7",
+    "name": "Shopping List",
+    "description": "Stuff to buy",
+    "workspace_id": 12345,
+    "is_invite_only": false,
+    "status": "IN_PROGRESS",
+    "is_link_sharing_enabled": true,
+    "collaborator_role_default": "READ_WRITE",
+    "color": "lime_green",
+    "parent_id": null,
+    "child_order": 1,
+    "order_key": "a1V",
+    "is_collapsed": false,
+    "shared": false,
+    "can_assign_tasks": false,
+    "is_deleted": false,
+    "is_archived": false,
+    "is_favorite": false,
+    "is_frozen": false,
+    "view_style": "list",
+    "role": "READ_WRITE",
+    "access": {
+        "visibility": "public",
+        "configuration": {
+            "hide_collaborator_details": true,
+            "disable_duplication": true
+        }
+    },
+    "inbox_project": true,
+    "folder_id": null,
+    "created_at": "2023-07-13T10:20:59Z",
+    "updated_at": "2024-12-10T13:27:29Z",
+    "is_pending_default_collaborator_invites": false
+}
