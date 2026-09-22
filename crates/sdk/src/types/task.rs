@@ -81,11 +81,11 @@ pub struct Task {
     pub is_deleted: bool,
     /// The date when the task was completed (or `None` if
     /// not completed).
-    pub completed_at: Option<String>,
+    pub completed_at: Option<DateTime<Utc>>,
     /// The datetime when the task was created.
-    pub added_at: String,
+    pub added_at: DateTime<Utc>,
     /// The datetime when the task was updated.
-    pub updated_at: String,
+    pub updated_at: DateTime<Utc>,
     /// Represents a task's duration. Is `None` if the task has no duration.
     pub duration: Option<TaskDuration>,
 }
@@ -330,8 +330,10 @@ mod tests {
             responsible_uid: None,
             checked: false,
             is_deleted: false,
-            added_at: String::from("2025-01-21T21:28:43.841504Z"),
-            updated_at: String::from("2025-01-21T21:28:43Z"),
+            added_at: DateTime::from_str("2025-01-21T21:28:43.841504Z")
+                .expect("`added_at` timestamp should be valid"),
+            updated_at: DateTime::from_str("2025-01-21T21:28:43Z")
+                .expect("`updated_at` timestamp should be valid"),
             completed_at: None,
             duration: Some(TaskDuration {
                 amount: NonZeroU32::new(15).expect("fifteen is non-zero"),
@@ -377,9 +379,14 @@ mod tests {
             responsible_uid: Some(Uid(String::from("1234567"))),
             checked: false,
             is_deleted: false,
-            added_at: String::from("2025-01-15T10:30:00Z"),
-            updated_at: String::from("2025-01-17T10:30:00Z"),
-            completed_at: Some(String::from("2025-01-16T10:30:00Z")),
+            added_at: DateTime::from_str("2025-01-15T10:30:00Z")
+                .expect("`added_at` timestamp should be valid"),
+            updated_at: DateTime::from_str("2025-01-17T10:30:00Z")
+                .expect("`updated_at` timestamp should be valid"),
+            completed_at: Some(
+                DateTime::from_str("2025-01-16T10:30:00Z")
+                    .expect("`completed_at` timestamp should be valid"),
+            ),
             duration: Some(TaskDuration {
                 amount: NonZeroU32::new(30).expect("thirty is non-zero"),
                 unit: TaskDurationUnit::Minute,

@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::types::{Color, Id};
@@ -60,11 +61,10 @@ pub struct Project {
     pub inbox_project: bool,
     /// The ID of the folder which this project is in.
     pub folder_id: Option<Id>,
-    // TODO: convert these to datetimes
     /// Date at which project was created.
-    pub created_at: String,
+    pub created_at: DateTime<Utc>,
     /// Date at which project was last updated.
-    pub updated_at: String,
+    pub updated_at: DateTime<Utc>,
     /// If `true`, default collaborators are still being added to the project
     /// in the background. Only used for teams.
     pub is_pending_default_collaborator_invites: bool,
@@ -138,6 +138,8 @@ pub enum ViewStyle {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use super::*;
 
     #[test]
@@ -169,8 +171,10 @@ mod tests {
             role: Role::ReadWrite,
             inbox_project: true,
             folder_id: None,
-            created_at: String::from("2023-07-13T10:20:59Z"),
-            updated_at: String::from("2024-12-10T13:27:29Z"),
+            created_at: DateTime::from_str("2023-07-13T10:20:59Z")
+                .expect("`created_at` timestamp should be valid"),
+            updated_at: DateTime::from_str("2024-12-10T13:27:29Z")
+                .expect("`updated_at` timestamp should be valid"),
             is_pending_default_collaborator_invites: false,
             access: ProjectAccess {
                 visibility: ProjectVisibility::Public,
