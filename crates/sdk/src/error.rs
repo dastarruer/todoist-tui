@@ -24,6 +24,10 @@ pub enum Error {
     ParseError(#[from] serde_json::Error),
     #[error("unexpected empty response from `{endpoint}`: {message}")]
     EmptyResponse { endpoint: String, message: String },
+    #[error("error while parsing date string: {0}")]
+    InvalidDate(#[from] chrono::ParseError),
+    #[error("error while parsing timezone string: {0}")]
+    InvalidTimezone(#[from] chrono_tz::ParseError),
     #[error("error: {0}")]
     Generic(String),
 }

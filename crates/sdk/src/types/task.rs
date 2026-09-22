@@ -1,8 +1,15 @@
+use std::{num::NonZeroU32, str::FromStr};
+
+use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
+use chrono_tz::Tz;
+use isolang::Language;
 use serde::{Deserialize, Serialize};
 
-use crate::types::{Id, Uid};
+use crate::{
+    error::Result,
+    types::{Id, Uid},
+};
 
-// TODO: Add missing due, deadline, and duration fields
 #[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Task {
     /// The ID of the task.
@@ -17,6 +24,10 @@ pub struct Task {
     /// A description for the task. This value may contain
     /// markdown-formatted text and hyperlinks.
     pub description: String,
+    /// The due date of the task.
+    pub due: Option<DueDate>,
+    /// The deadline of the task.
+    pub deadline: Option<Deadline>,
     /// The priority of the task (a number between `1` and
     /// `4`, `4` for very urgent and `1` for natural).
     ///
@@ -75,6 +86,8 @@ pub struct Task {
     pub added_at: String,
     /// The datetime when the task was updated.
     pub updated_at: String,
+    /// Represents a task's duration. Is `None` if the task has no duration.
+    pub duration: Option<TaskDuration>,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
@@ -83,9 +96,213 @@ pub(crate) struct TasksResponse {
     pub(crate) next_cursor: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct TaskDuration {
+    pub amount: NonZeroU32,
+    pub unit: TaskDurationUnit,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "lowercase")]
+pub enum TaskDurationUnit {
+    Minute,
+    Day,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct DueDate {
+    date: String,
+    /// Human-readable representation of due date. String always represents the
+    /// due object in user's timezone. Look at the Todoist docs to
+    /// [see which formats are supported](https://www.todoist.com/help/todoist/features/schedule-a-date-and-time-for-your-todoist-tasks-q7VobO).
+    pub string: String,
+    /// Timezone of the due instance. Not public since timezone calculations
+    /// can be handled through getters instead.
+    #[serde(default)]
+    timezone: Option<String>,
+    /// Language which has to be used to parse the content of the string
+    /// attribute. Used by clients and on the server side to properly process
+    /// due dates when date object is not set, and when dealing with recurring
+    /// tasks.
+    pub lang: Language,
+    /// Whether the due object represents a recurring due date.
+    pub is_recurring: bool,
+}
+
+impl DueDate {
+    /// Convert the due date to a chrono date type.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - `date` is an invalid timestamp.
+    /// - Timezone is invalid.
+    pub fn to_datetime(&self) -> Result<DueDateType> {
+        DueDateType::new(&self.date, self.timezone.as_deref())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum DueDateType {
+    /// Derived from a `YYYY-MM-DD` date string.
+    FullDay(NaiveDate),
+    /// Derived from a timestamp date string.
+    FloatingDateTime(NaiveDateTime),
+    /// Derived from a timestamp date string with a provided timezone.
+    DateTimeTimezone(DateTime<Tz>),
+}
+
+impl DueDateType {
+    fn new(date: &str, timezone: Option<&str>) -> Result<Self> {
+        if let Ok(date) = NaiveDate::from_str(date) {
+            return Ok(Self::FullDay(date));
+        }
+
+        if let Some(timezone) = timezone {
+            let timezone = Tz::from_str(timezone)?;
+            let utc = date.parse::<DateTime<Utc>>()?;
+            let local = utc.with_timezone(&timezone);
+            return Ok(Self::DateTimeTimezone(local));
+        }
+        let naive = date.parse::<NaiveDateTime>()?;
+        Ok(Self::FloatingDateTime(naive))
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Deadline {
+    #[serde(with = "deadline_time_format")]
+    pub date: NaiveDate,
+    /// Not really used and so is a private field. don't ask me what this does
+    /// tbh...
+    lang: Language,
+}
+
+mod deadline_time_format {
+    use chrono::NaiveDate;
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    pub(super) const DEADLINE_FORMAT: &str = "%Y-%m-%d";
+
+    // could fix this lint but then it's extra work so...
+    #[allow(clippy::trivially_copy_pass_by_ref)]
+    pub fn serialize<S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = format!("{}", date.format(DEADLINE_FORMAT));
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        NaiveDate::parse_from_str(&s, DEADLINE_FORMAT).map_err(serde::de::Error::custom)
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
+    use crate::types::task::deadline_time_format::DEADLINE_FORMAT;
+
     use super::*;
+
+    mod due_date {
+        use super::*;
+        use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
+        use chrono_tz::Europe::Madrid;
+
+        #[test]
+        fn to_datetime_full_day() {
+            let due_date = DueDate {
+                date: "2016-12-06".to_string(),
+                timezone: None,
+                is_recurring: false,
+                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                string: String::from("tomorrow"),
+            };
+
+            let result = due_date.to_datetime().unwrap();
+
+            assert_eq!(
+                result,
+                DueDateType::FullDay(NaiveDate::from_ymd_opt(2016, 12, 6).unwrap())
+            );
+        }
+
+        #[test]
+        fn to_datetime_floating_datetime() {
+            let due_date = DueDate {
+                date: "2016-12-06T13:00:00".to_string(),
+                timezone: None,
+                is_recurring: false,
+                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                string: String::from("tomorrow"),
+            };
+
+            let result = due_date.to_datetime().unwrap();
+
+            assert_eq!(
+                result,
+                DueDateType::FloatingDateTime(
+                    NaiveDateTime::parse_from_str("2016-12-06T13:00:00", "%Y-%m-%dT%H:%M:%S",)
+                        .unwrap()
+                )
+            );
+        }
+
+        #[test]
+        fn to_datetime_with_timezone() {
+            let due_date = DueDate {
+                date: "2016-12-06T13:00:00.000000Z".to_string(),
+                timezone: Some("Europe/Madrid".to_string()),
+                is_recurring: false,
+                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                string: String::from("tomorrow"),
+            };
+
+            let result = due_date.to_datetime().unwrap();
+
+            let expected = DueDateType::DateTimeTimezone(
+                "2016-12-06T13:00:00Z"
+                    .parse::<DateTime<Utc>>()
+                    .unwrap()
+                    .with_timezone(&Madrid),
+            );
+
+            assert_eq!(result, expected);
+        }
+
+        #[test]
+        fn to_datetime_invalid_date() {
+            let due_date = DueDate {
+                date: "not-a-date".to_string(),
+                timezone: None,
+                is_recurring: false,
+                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                string: String::from("tomorrow"),
+            };
+
+            assert!(due_date.to_datetime().is_err());
+        }
+
+        #[test]
+        fn to_datetime_invalid_timezone() {
+            let due_date = DueDate {
+                date: "2016-12-06T13:00:00.000000Z".to_string(),
+                timezone: Some("Not/A_Timezone".to_string()),
+                is_recurring: false,
+                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                string: String::from("tomorrow"),
+            };
+
+            assert!(due_date.to_datetime().is_err());
+        }
+    }
 
     #[test]
     fn deserialize_task() {
@@ -98,6 +315,8 @@ mod tests {
             project_id: Id(String::from("6Jf8VQXxpwv56VQ7")),
             content: String::from("Buy Milk"),
             description: String::new(),
+            deadline: None,
+            due: None,
             priority: 1,
             parent_id: None,
             child_order: 1,
@@ -114,6 +333,10 @@ mod tests {
             added_at: String::from("2025-01-21T21:28:43.841504Z"),
             updated_at: String::from("2025-01-21T21:28:43Z"),
             completed_at: None,
+            duration: Some(TaskDuration {
+                amount: NonZeroU32::new(15).expect("fifteen is non-zero"),
+                unit: TaskDurationUnit::Minute,
+            }),
         };
         pretty_assertions::assert_eq!(task, expected);
     }
@@ -129,6 +352,18 @@ mod tests {
             project_id: Id(String::from("6XGgm6PHrGgMpCFX")),
             content: String::from("Buy milk"),
             description: String::from("Pick up organic milk"),
+            due: Some(DueDate {
+                date: String::from("2025-02-12"),
+                is_recurring: false,
+                timezone: None,
+                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                string: String::from("tomorrow"),
+            }),
+            deadline: Some(Deadline {
+                date: NaiveDate::parse_from_str("2025-02-12", DEADLINE_FORMAT)
+                    .expect("date should be valid"),
+                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+            }),
             priority: 1,
             parent_id: Some(Id(String::from("6XGgmFVcrG5RRjVr"))),
             child_order: 1,
@@ -145,6 +380,10 @@ mod tests {
             added_at: String::from("2025-01-15T10:30:00Z"),
             updated_at: String::from("2025-01-17T10:30:00Z"),
             completed_at: Some(String::from("2025-01-16T10:30:00Z")),
+            duration: Some(TaskDuration {
+                amount: NonZeroU32::new(30).expect("thirty is non-zero"),
+                unit: TaskDurationUnit::Minute,
+            }),
         };
 
         assert_eq!(response.results.len(), 1);

@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+chrono = "0.4.45"
+chrono-tz = { version = "0.10.4", features = ["serde"] }
+isolang = { version = "2.4.0", features = ["serde"] }
 keyring = { version = "4.2.0", features = ["v1"] }
 reqwest = { version = "0.13.5", features = ["json"] }
 serde = "1.0.229"
