@@ -90,12 +90,6 @@ pub struct Task {
     pub duration: Option<TaskDuration>,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
-pub(crate) struct TasksResponse {
-    pub(crate) results: Vec<Task>,
-    pub(crate) next_cursor: Option<String>,
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TaskDuration {
     pub amount: NonZeroU32,
@@ -207,7 +201,7 @@ mod deadline_time_format {
 mod tests {
     use std::str::FromStr;
 
-    use crate::types::task::deadline_time_format::DEADLINE_FORMAT;
+    use crate::{SyncResponse, types::task::deadline_time_format::DEADLINE_FORMAT};
 
     use super::*;
 
@@ -346,7 +340,7 @@ mod tests {
     #[test]
     fn deserialize_tasks_response() {
         let json = include_str!("../fixtures/tasks/tasks.json");
-        let response = serde_json::from_str::<TasksResponse>(json)
+        let response = serde_json::from_str::<SyncResponse>(json)
             .expect("tasks response should be successfully deserialized");
         let expected = Task {
             id: Id(String::from("6XGgmFVcrG5RRjVr")),
@@ -393,11 +387,8 @@ mod tests {
             }),
         };
 
-        assert_eq!(response.results.len(), 1);
-        pretty_assertions::assert_eq!(response.results[0], expected);
-        assert_eq!(
-            response.next_cursor,
-            Some(String::from("14540000435w8hj8pXXwPQJJch.X9DBH8ya2Xenok55"))
-        );
+        let items = response.items.expect("`items` should exist");
+        assert_eq!(items.len(), 1);
+        pretty_assertions::assert_eq!(items[0], expected);
     }
 }
