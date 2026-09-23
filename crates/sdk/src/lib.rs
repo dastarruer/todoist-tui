@@ -85,6 +85,19 @@ impl APIClient {
         Ok(resp)
     }
 
+    /// Convenience method to retrieve all sync data. The `APIClient`'s internal
+    /// sync key will be automatically updated upon a successful sync.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - An error occurs while sending the request.
+    /// - An error status code (`400-599`) is returned.
+    /// - The response text cannot be parsed into a `SyncResponse`.
+    pub async fn sync_all(&mut self) -> Result<SyncResponse> {
+        self.sync(vec![ResourceType::All]).await
+    }
+
     fn sync_url() -> Url {
         Url::from_str("https://api.todoist.com/api/v1/sync").expect("sync API URL should be valid")
     }
