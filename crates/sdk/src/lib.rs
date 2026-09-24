@@ -34,9 +34,11 @@ impl APIClient {
         }
     }
 
-    /// Creates a new client with a sync key. If you plan on syncing across
-    /// restarts, you should store the sync key somewhere permanent and
-    /// initialize an `APIClient` using this method.
+    /// Creates a new client with a sync key.
+    ///
+    /// External consumers should store the sync key somewhere permanent and
+    /// initialize `APIClient` with this method if it is necessary to use
+    /// incremental sync across restarts.
     #[must_use]
     pub fn new_with_sync_key(key: String, sync_key: String) -> Self {
         #[expect(clippy::missing_panics_doc, reason = "infallible")]
@@ -106,8 +108,8 @@ impl APIClient {
 
 /// Stores the sync key the Todoist sync API uses to enable incremental sync.
 ///
-/// External consumers should store this somewhere permanent if you plan to use
-/// incremental sync across restarts.
+/// External consumers should store this somewhere permanent if it is necessary
+/// to use incremental sync across restarts.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SyncKey(String);
 
