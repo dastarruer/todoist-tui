@@ -131,6 +131,9 @@ pub struct SyncResponse {
     /// some reason.
     pub items: Option<Vec<Task>>,
     pub projects: Option<Vec<Project>>,
+    /// Whether the response is a full sync or an incremental sync.
+    #[serde(default)]
+    pub full_sync: bool,
     sync_token: String,
 }
 
