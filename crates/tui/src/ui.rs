@@ -1,9 +1,9 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
+    style::{Color, Style, Stylize},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Row, Table},
 };
 
 use crate::app::App;
@@ -24,17 +24,22 @@ pub fn ui(frame: &mut Frame, app: &App) {
                 .expect("first element of chunks should exist"),
         );
 
-    let mut tasks_list_items = Vec::<ListItem>::new();
+    let mut task_rows = Vec::<Row>::new();
     for task in &app.tasks {
-        tasks_list_items.push(ListItem::new(Line::from(Span::styled(
-            format!("[ ] {}", task.content),
-            Style::default().fg(Color::Yellow),
-        ))));
+        let mut task_style = Style::default().fg(Color::Yellow);
+        if let Some(highlighted_task) = &app.highlighted_task
+            && task == highlighted_task
+        {
+            task_style = task_style.bg(Color::White);
+        }
+
+        let row = Row::new(vec![format!("[ ] {}", task.content)]).style(task_style);
+        task_rows.push(row);
     }
-    let tasks_list =
-        List::new(tasks_list_items).block(Block::new().borders(Borders::LEFT | Borders::BOTTOM));
+    let tasks_table = Table::new(task_rows, [Constraint::Fill(1)])
+        .block(Block::new().borders(Borders::LEFT | Borders::BOTTOM));
     frame.render_widget(
-        tasks_list,
+        tasks_table,
         *view.get(1).expect("second element of view should exist"),
     );
 
@@ -49,6 +54,9 @@ pub fn ui(frame: &mut Frame, app: &App) {
     let footer = *chunks
         .get(1)
         .expect("second element of chunks should exist");
-    let hints = Paragraph::new(Line::from(vec![]));
+    let hints = Paragraph::new(Line::from(vec![
+        Span::from("<j/k> ").blue(),
+        Span::from("move "),
+    ]));
     frame.render_widget(hints, footer);
 }
