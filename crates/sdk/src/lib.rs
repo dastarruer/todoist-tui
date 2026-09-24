@@ -63,17 +63,18 @@ impl APIClient {
     /// - An error status code (`400-599`) is returned.
     /// - The response text cannot be parsed into a `SyncResponse`.
     pub async fn sync(&mut self, resource_types: Vec<ResourceType>) -> Result<SyncResponse> {
-        let data = serde_json::json!({
-            "sync_token": self.sync_key.key(),
-            "resource_types": resource_types,
-        });
+        let resource_types = serde_json::to_string(&resource_types)?;
+        let data = [
+            ("sync_token", self.sync_key.key()),
+            ("resource_types", &resource_types),
+        ];
 
         let resp = serde_json::from_str::<SyncResponse>(
             &self
                 .client
                 .post(Self::sync_url())
-                .json(&data)
                 .bearer_auth(&self.key)
+                .form(&data)
                 .send()
                 .await?
                 .error_for_status()?
