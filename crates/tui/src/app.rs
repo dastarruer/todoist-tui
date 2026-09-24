@@ -1,4 +1,4 @@
-use todoist_sdk::{APIClient, types::task::Task};
+use todoist_sdk::{APIClient, ResourceType, types::task::Task};
 
 pub struct App {
     _client: APIClient,
@@ -6,8 +6,12 @@ pub struct App {
 }
 
 impl App {
-    pub async fn new(client: APIClient) -> color_eyre::Result<Self> {
-        let tasks = client.tasks().await?;
+    pub async fn new(mut client: APIClient) -> color_eyre::Result<Self> {
+        let tasks = client
+            .sync(vec![ResourceType::Items])
+            .await?
+            .items
+            .expect("`items` should exist");
         Ok(Self {
             _client: client,
             tasks,
