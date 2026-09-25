@@ -25,13 +25,16 @@ pub fn ui(frame: &mut Frame, app: &App) {
         );
 
     let mut task_rows = Vec::<Row>::new();
+    let highlighted_task = app.highlighted_task();
     for task in &app.tasks {
-        let mut task_style = Style::default().fg(Color::Yellow);
-        if let Some(highlighted_task) = &app.highlighted_task
+        let bg_color = if let Some(highlighted_task) = highlighted_task
             && task == highlighted_task
         {
-            task_style = task_style.bg(Color::White);
-        }
+            Color::White
+        } else {
+            Color::Reset
+        };
+        let task_style = Style::default().fg(Color::Yellow).bg(bg_color);
 
         let row = Row::new(vec![format!("[ ] {}", task.content)]).style(task_style);
         task_rows.push(row);

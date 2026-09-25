@@ -13,9 +13,9 @@ use crate::{app::App, ui::ui};
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
-    let app = bootstrap_app().await?;
+    let mut app = bootstrap_app().await?;
     let mut terminal = ratatui::init();
-    run_app(&mut terminal, &app)?;
+    run_app(&mut terminal, &mut app)?;
     ratatui::restore();
 
     Ok(())
@@ -54,15 +54,16 @@ async fn bootstrap_app() -> color_eyre::Result<App> {
 
 fn run_app(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    app: &App,
+    app: &mut App,
 ) -> color_eyre::Result<bool> {
     loop {
         terminal.draw(|f| ui(f, app))?;
-        // probably will need to add other keybinds in the future anyways
-        #[allow(clippy::collapsible_if)]
         if let Event::Key(key) = event::read()? {
-            if key.code == KeyCode::Char('q') {
-                return Ok(true);
+            match key.code {
+                KeyCode::Char('q') => return Ok(true),
+                KeyCode::Char('k') => app.move_up(),
+                KeyCode::Char('j') => app.move_down(),
+                _ => {}
             }
         }
     }

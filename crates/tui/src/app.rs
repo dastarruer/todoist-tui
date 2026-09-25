@@ -3,7 +3,7 @@ use todoist_sdk::{APIClient, ResourceType, types::task::Task};
 pub struct App {
     _client: APIClient,
     pub tasks: Vec<Task>,
-    pub(crate) highlighted_task: Option<Task>,
+    highlighted_task_index: usize,
 }
 
 impl App {
@@ -13,11 +13,25 @@ impl App {
             .await?
             .items
             .expect("`items` should exist");
-        let highlighted_task = tasks.first().cloned();
         Ok(Self {
             _client: client,
             tasks,
-            highlighted_task,
+            highlighted_task_index: 0,
         })
+    }
+
+    pub fn highlighted_task(&self) -> Option<&Task> {
+        self.tasks.get(self.highlighted_task_index)
+    }
+
+    pub const fn move_up(&mut self) {
+        self.highlighted_task_index = self.highlighted_task_index.saturating_sub(1);
+    }
+
+    pub fn move_down(&mut self) {
+        self.highlighted_task_index = self
+            .highlighted_task_index
+            .saturating_add(1)
+            .min(self.tasks.len().saturating_sub(1));
     }
 }
