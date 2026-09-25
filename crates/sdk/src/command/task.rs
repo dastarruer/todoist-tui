@@ -213,10 +213,10 @@ impl CommandArgs for UncompleteTask {
     const CREATES_RESOURCE: bool = false;
 }
 
-/// Complete a recurring task. 
-/// 
-/// The reason why this is a special case is because we need to mark a 
-/// recurring completion (and using `UpdateTask` won't do this). See also 
+/// Complete a recurring task.
+///
+/// The reason why this is a special case is because we need to mark a
+/// recurring completion (and using `UpdateTask` won't do this). See also
 /// `CloseTask` for a simplified version of the command.
 #[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
 pub struct CompleteRecurringTask {
@@ -224,11 +224,11 @@ pub struct CompleteRecurringTask {
     pub id: Id,
     /// The due date of the task.
     pub due: Option<DueDate>,
-    /// Set this to `true` for completion, or `false` for uncompletion (e.g. 
+    /// Set this to `true` for completion, or `false` for uncompletion (e.g.
     /// via undo). If omitted, this argument is set to `true`.
     pub is_forward: Option<bool>,
-    /// Set this property to `true` to reset subtasks when a recurring task is 
-    /// completed. By default, this property is not set (`false`), and subtasks 
+    /// Set this property to `true` to reset subtasks when a recurring task is
+    /// completed. By default, this property is not set (`false`), and subtasks
     /// will retain their existing status when the parent task recurs.
     pub reset_subtasks: Option<bool>,
 }
@@ -238,10 +238,10 @@ impl CommandArgs for CompleteRecurringTask {
     const CREATES_RESOURCE: bool = false;
 }
 
-/// A simplified version of `CompleteTask` / `CompleteRecurringTask`. 
-/// 
-/// The command does exactly what official clients do when you close a task: 
-/// regular tasks are completed and moved to the archive, recurring tasks are 
+/// A simplified version of `CompleteTask` / `CompleteRecurringTask`.
+///
+/// The command does exactly what official clients do when you close a task:
+/// regular tasks are completed and moved to the archive, recurring tasks are
 /// scheduled to their next occurrence.
 #[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
 pub struct CloseTask {
@@ -255,8 +255,8 @@ impl CommandArgs for CloseTask {
 }
 
 /// Update the day orders of multiple tasks at once.
-/// 
-/// Unlike `UpdateTask`, this is meant to be used for multiple tasks, rather 
+///
+/// Unlike `UpdateTask`, this is meant to be used for multiple tasks, rather
 /// than just one.
 #[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
 pub struct UpdateTaskDayOrders {

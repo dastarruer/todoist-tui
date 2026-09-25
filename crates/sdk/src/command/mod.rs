@@ -48,11 +48,11 @@ impl<T> Command<T> {
 
 /// Trait for structs that can be send as Todoist commands.
 pub trait CommandArgs {
-    /// The command string to be sent to the Todoist API, e.g. `"item_move"`, 
+    /// The command string to be sent to the Todoist API, e.g. `"item_move"`,
     /// `"item_add"`, etc.
     const TYPE: &str;
 
-    /// Commands that create resources will require a `temp_id` when sending to 
+    /// Commands that create resources will require a `temp_id` when sending to
     /// the Todoist API.
     const CREATES_RESOURCE: bool;
 }

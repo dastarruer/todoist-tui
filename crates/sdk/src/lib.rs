@@ -1,7 +1,9 @@
+pub mod command;
 pub mod error;
 pub mod types;
 
 use crate::{
+    command::CommandArgs,
     error::Result,
     types::{project::Project, task::Task},
 };
@@ -99,6 +101,28 @@ impl APIClient {
     /// - The response text cannot be parsed into a `SyncResponse`.
     pub async fn sync_all(&mut self) -> Result<SyncResponse> {
         self.sync(vec![ResourceType::All]).await
+    }
+
+    /// Sends commands to write resources to the Todoist API.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - An error occurs while sending the request.
+    /// - An error status code (`400-599`) is returned.
+    pub async fn send<T: CommandArgs + Serialize + Sync>(&self, commands: &[T]) -> Result<()> {
+        let data = [("commands", commands)];
+        // don't really care about response for now
+        // TODO: add SyncReadResp struct
+        let _ = &self
+            .client
+            .post(Self::sync_url())
+            .bearer_auth(&self.key)
+            .form(&data)
+            .send()
+            .await?
+            .error_for_status()?;
+        Ok(())
     }
 
     fn sync_url() -> Url {
