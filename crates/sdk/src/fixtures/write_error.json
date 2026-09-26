@@ -1,0 +1,14 @@
+{
+    "sync_status": {
+        "bec5b356-3cc1-462a-9887-fe145e3e1ebf": {
+            "error_tag": "INVALID_ARGUMENT_VALUE",
+            "error_code": 20,
+            "error": "Invalid argument value",
+            "http_code": 400,
+            "error_extra": {
+                "argument": "file_url",
+                "explanation": "file_url contains disallowed URL"
+            }
+        }
+    }
+}
