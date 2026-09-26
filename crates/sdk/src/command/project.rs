@@ -17,7 +17,7 @@ pub struct AddProject {
     pub name: String,
     /// Description for the project (up to 1024 characters). Only used for
     /// teams.
-    pub description: String,
+    pub description: Option<String>,
     /// The status of the project.
     pub status: Option<ProjectStatus>,
     /// The color of the project icon.
@@ -64,7 +64,7 @@ pub struct UpdateProject {
     /// The ID of the project to be updated.
     pub id: Id,
     /// The name of the project.
-    pub name: String,
+    pub name: Option<String>,
     /// The color of the project icon.
     pub color: Option<Color>,
     /// Whether the project's sub-projects are collapsed.
@@ -79,9 +79,9 @@ pub struct UpdateProject {
     pub view_style: Option<ViewStyle>,
     /// Description for the project (up to 1024 characters). Only used for
     /// teams.
-    pub description: String,
+    pub description: Option<String>,
     /// The status of the project.
-    pub status: ProjectStatus,
+    pub status: Option<ProjectStatus>,
     /// If `false`, the project is invite-only and people can't join by link. If `true`, the project is visible to anyone with a link, and anyone can join it. Only used for teams.
     pub is_link_sharing_enabled: Option<bool>,
     /// Project access configuration.
