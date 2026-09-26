@@ -111,6 +111,7 @@ impl APIClient {
     /// - An error occurs while sending the request.
     /// - An error status code (`400-599`) is returned.
     pub async fn send<T: CommandArgs + Serialize + Sync>(&self, commands: &[T]) -> Result<()> {
+        let commands = serde_json::to_string(commands)?;
         let data = [("commands", commands)];
         // don't really care about response for now
         // TODO: add SyncReadResp struct
