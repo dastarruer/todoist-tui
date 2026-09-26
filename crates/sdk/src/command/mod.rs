@@ -37,11 +37,25 @@ impl<T> Command<T> {
     /// Temporary resource ID. Only specified for commands that create a new
     /// resource.
     ///
-    /// An exmaple of how temporary IDs can be used and referenced:
-    /// ```rs
-    /// let add_cmd = Command::new_with
+    /// An example of how temporary IDs can be used and referenced:
+    ///
+    /// ```rust
+    /// # use todoist_sdk::command::{Command, project::AddProject, task::AddTask};
+    /// # use todoist_sdk::types::Id;
+    /// let project = Command::new(AddProject::default());
+    /// let temp_id = project.temp_id().expect("project should have a `temp_id` field");
+    ///
+    /// let task = Command::new(AddTask {
+    ///     content: String::from("Buy Milk"),
+    ///     project_id: Some(temp_id.into()),
+    ///     ..Default::default()
+    /// });
     /// ```
-    // TODO: finish this
+    ///
+    /// Here, a task is added to the new project by referencing its `temp_id`
+    /// before it is actually created through the Todoist API. This is a good
+    /// way to batch commands that rely on non-existent resources that are
+    /// soon-to-be-created.
     pub const fn temp_id(&self) -> Option<Uuid> {
         self.temp_id
     }

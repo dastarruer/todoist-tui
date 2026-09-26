@@ -2,9 +2,16 @@ pub mod project;
 pub mod task;
 
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Id(pub String);
+
+impl From<Uuid> for Id {
+    fn from(value: Uuid) -> Self {
+        Self(value.to_string())
+    }
+}
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Uid(pub String);
