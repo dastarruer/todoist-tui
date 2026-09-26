@@ -86,10 +86,8 @@ pub struct UpdateProject {
     pub is_link_sharing_enabled: Option<bool>,
     /// Project access configuration.
     pub access: Option<ProjectAccess>,
-    /// Whether Project Insights is enabled for this project.
-    ///
-    /// Defaults to `true`. Only used for teams.
-    #[builder(default = true)]
+    /// Whether Project Insights is enabled for this project. Only used for
+    /// teams.
     pub is_project_insights_enabled: bool,
     /// The default role a user can have. Only used for teams.
     pub collaborator_role_default: Option<Role>,
