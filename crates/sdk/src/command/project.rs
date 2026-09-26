@@ -141,19 +141,8 @@ pub struct MoveProjectIntoWorkspace {
     /// If provided, the project and any child projects will be moved into this workspace folder.
     pub folder_id: Option<Id>,
     /// Soon to be deprecated and should always be set to true.
+    #[builder(skip = true)]
     use_lro: bool,
-}
-
-impl Default for MoveProjectIntoWorkspace {
-    fn default() -> Self {
-        Self {
-            id: Id::default(),
-            workspace_id: Id::default(),
-            is_invite_only: Option::default(),
-            folder_id: Option::default(),
-            use_lro: true,
-        }
-    }
 }
 
 impl CommandArgs for MoveProjectIntoWorkspace {
@@ -172,16 +161,8 @@ pub struct MoveProjectOutOfWorkspace {
     #[serde(rename = "project_id")]
     pub id: Id,
     /// Soon to be deprecated and should always be set to true.
+    #[builder(skip = true)]
     use_lro: bool,
-}
-
-impl Default for MoveProjectOutOfWorkspace {
-    fn default() -> Self {
-        Self {
-            id: Id::default(),
-            use_lro: true,
-        }
-    }
 }
 
 impl CommandArgs for MoveProjectOutOfWorkspace {
@@ -284,8 +265,19 @@ mod tests {
 
     #[test]
     fn use_lro_is_true() {
-        // These flags should always be true
-        assert!(MoveProjectIntoWorkspace::default().use_lro);
-        assert!(MoveProjectOutOfWorkspace::default().use_lro);
+        // use_lro should always be true
+        assert!(
+            MoveProjectIntoWorkspace::builder()
+                .id("123")
+                .workspace_id("123")
+                .build()
+                .use_lro
+        );
+        assert!(
+            MoveProjectOutOfWorkspace::builder()
+                .id("123")
+                .build()
+                .use_lro
+        );
     }
 }
