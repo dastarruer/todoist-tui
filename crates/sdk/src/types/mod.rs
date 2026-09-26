@@ -13,6 +13,18 @@ impl From<Uuid> for Id {
     }
 }
 
+impl From<String> for Id {
+    fn from(value: String) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&str> for Id {
+    fn from(value: &str) -> Self {
+        Self::from(String::from(value))
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Uid(pub String);
 

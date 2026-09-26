@@ -1,3 +1,5 @@
+#![allow(clippy::duplicated_attributes)]
+
 pub mod project;
 pub mod task;
 
@@ -42,14 +44,15 @@ impl<T> Command<T> {
     /// ```rust
     /// # use todoist_sdk::command::{Command, project::AddProject, task::AddTask};
     /// # use todoist_sdk::types::Id;
-    /// let project = Command::new(AddProject::default());
-    /// let temp_id = project.temp_id().expect("project should have a `temp_id` field");
+    /// let project = Command::new(
+    ///    AddProject::builder()
+    ///        .name("Milk Run")
+    ///        .description("things to do to buy milk")
+    ///        .build(),
+    /// );
+    /// let temp_id = project.temp_id().expect("project should have `temp_id` field");
     ///
-    /// let task = Command::new(AddTask {
-    ///     content: String::from("Buy Milk"),
-    ///     project_id: Some(temp_id.into()),
-    ///     ..Default::default()
-    /// });
+    /// let task = Command::new(AddTask::builder().content("Buy Milk").project_id(temp_id).build());
     /// ```
     ///
     /// Here, a task is added to the new project by referencing its `temp_id`
@@ -81,19 +84,19 @@ mod tests {
 
     #[test]
     fn creating_command_attaches_a_temp_id() {
-        let cmd = Command::new(AddTask::default());
+        let cmd = Command::new(AddTask::builder().content("Buy Milk").build());
         assert!(cmd.temp_id.is_some());
     }
 
     #[test]
     fn non_creating_command_has_no_temp_id() {
-        let cmd = Command::new(DeleteTask::default());
+        let cmd = Command::new(DeleteTask::builder().id("123").build());
         assert!(cmd.temp_id.is_none());
     }
 
     #[test]
     fn temp_id_is_omitted_from_json_when_absent() {
-        let cmd = Command::new(DeleteTask::default());
+        let cmd = Command::new(DeleteTask::builder().id("123").build());
         let value = serde_json::to_value(&cmd).unwrap();
         assert!(
             value.get("temp_id").is_none(),
@@ -103,21 +106,21 @@ mod tests {
 
     #[test]
     fn temp_id_is_present_in_json_when_set() {
-        let cmd = Command::new(AddTask::default());
+        let cmd = Command::new(AddTask::builder().content(String::from("Buy Milk")).build());
         let value = serde_json::to_value(&cmd).unwrap();
         assert!(value.get("temp_id").is_some());
     }
 
     #[test]
     fn serialized_command_has_correct_type_tag() {
-        let cmd = Command::new(CloseTask::default());
+        let cmd = Command::new(CloseTask::builder().id("123").build());
         let value = serde_json::to_value(&cmd).unwrap();
         pretty_assertions::assert_eq!(value["type"], json!("item_close"));
     }
 
     #[test]
     fn serialized_command_nests_args_under_args_key() {
-        let cmd = Command::new(DeleteTask::default());
+        let cmd = Command::new(DeleteTask::builder().id("123").build());
         let value = serde_json::to_value(&cmd).unwrap();
         assert!(value.get("args").is_some());
         assert!(value["args"].get("id").is_some());
@@ -125,7 +128,7 @@ mod tests {
 
     #[test]
     fn every_serialized_command_includes_a_valid_uuid() {
-        let cmd = Command::new(CloseTask::default());
+        let cmd = Command::new(CloseTask::builder().id("123").build());
         let value = serde_json::to_value(&cmd).unwrap();
         let uuid_str = value["uuid"]
             .as_str()

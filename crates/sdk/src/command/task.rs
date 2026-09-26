@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use bon::Builder;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 
@@ -12,7 +13,8 @@ use crate::{
 };
 
 /// Add a task.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct AddTask {
     /// The text of the task. This value may contain markdown-formatted text
     /// and hyperlinks.
@@ -87,7 +89,8 @@ impl CommandArgs for AddTask {
 /// Please note that updating the parent, moving, completing or uncompleting
 /// tasks is not supported by `UpdateTask`. More specific commands have to be
 /// used instead.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct UpdateTask {
     /// The ID of the task.
     pub id: Id,
@@ -144,7 +147,8 @@ impl CommandArgs for UpdateTask {
 /// Move task to a different location.
 ///
 /// Only one of `parent_id`, `section_id` or `project_id` must be set.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct MoveTask {
     /// The ID of the task.
     pub id: Id,
@@ -165,7 +169,8 @@ impl CommandArgs for MoveTask {
 }
 
 /// Delete a task and all its sub-tasks.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct DeleteTask {
     /// ID of the task to delete.
     pub id: Id,
@@ -178,7 +183,8 @@ impl CommandArgs for DeleteTask {
 
 /// Completes a task and its sub-tasks and moves them to the archive. See also
 /// `CloseTask` for a simplified version of the command.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct CompleteTask {
     /// Task ID to complete.
     pub id: Id,
@@ -202,7 +208,8 @@ impl CommandArgs for CompleteTask {
 ///
 /// The reinstated items and sections will appear at the end of the list within
 /// their parent, after any previously active tasks.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct UncompleteTask {
     /// Task ID to uncomplete.
     pub id: Id,
@@ -218,7 +225,8 @@ impl CommandArgs for UncompleteTask {
 /// The reason why this is a special case is because we need to mark a
 /// recurring completion (and using `UpdateTask` won't do this). See also
 /// `CloseTask` for a simplified version of the command.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct CompleteRecurringTask {
     /// Task ID to complete.
     pub id: Id,
@@ -243,7 +251,8 @@ impl CommandArgs for CompleteRecurringTask {
 /// The command does exactly what official clients do when you close a task:
 /// regular tasks are completed and moved to the archive, recurring tasks are
 /// scheduled to their next occurrence.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct CloseTask {
     /// The ID of the task to close.
     pub id: Id,
@@ -258,7 +267,8 @@ impl CommandArgs for CloseTask {
 ///
 /// Unlike `UpdateTask`, this is meant to be used for multiple tasks, rather
 /// than just one.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct UpdateTaskDayOrders {
     /// A mapping where each key is a task ID and each value is a `day_order`.
     pub ids_to_orders: HashMap<Id, i32>,
@@ -304,8 +314,8 @@ mod tests {
     #[test]
     fn update_task_day_orders_holds_multiple_mappings() {
         let mut ids_to_orders: HashMap<Id, i32> = HashMap::new();
-        ids_to_orders.insert(Id(String::from("111")), 1);
-        ids_to_orders.insert(Id(String::from("222")), 2);
+        ids_to_orders.insert(Id::from("111"), 1);
+        ids_to_orders.insert(Id::from("222"), 2);
 
         let args = UpdateTaskDayOrders {
             ids_to_orders: ids_to_orders.clone(),

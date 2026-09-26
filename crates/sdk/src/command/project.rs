@@ -1,3 +1,4 @@
+use bon::Builder;
 use serde::Serialize;
 
 use crate::{
@@ -9,10 +10,16 @@ use crate::{
 };
 
 /// Add a new project.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct AddProject {
     /// The name of the project.
     pub name: String,
+    /// Description for the project (up to 1024 characters). Only used for
+    /// teams.
+    pub description: String,
+    /// The status of the project.
+    pub status: Option<ProjectStatus>,
     /// The color of the project icon.
     pub color: Option<Color>,
     /// The ID of the parent project. Set to `None` for root projects.
@@ -28,24 +35,21 @@ pub struct AddProject {
     pub is_favorite: Option<bool>,
     /// Determines the way the project is displayed within Todoist clients.
     pub view_style: Option<ViewStyle>,
-    /// Description for the project (up to 1024 characters). Only used for
-    /// teams.
-    pub description: String,
     /// ID of the workspace the project should belong to.
     pub workspace_id: Option<Id>,
-    /// Indicates if the project is invite-only or if it should be visible for everyone in the workspace. If set to `None`, the default value from the workspace `is_invite_only_default` will be used. Only used for teams.
+    /// Indicates if the project is invite-only or if it should be visible for everyone in the workspace. If left as `None`, the default value from the workspace `is_invite_only_default` will be used. Only used for teams.
     pub is_invite_only: Option<bool>,
-    /// The status of the project.
-    pub status: ProjectStatus,
     /// If `false`, the project is invite-only and people can't join by link. If `true`, the project is visible to anyone with a link, and anyone can join it. Only used for teams.
     pub is_link_sharing_enabled: Option<bool>,
     /// The default role a user can have. Only used for teams.
     pub collaborator_role_default: Option<Role>,
     /// Project access configuration.
     pub access: Option<ProjectAccess>,
-    /// Whether Project Insights is enabled for this project. If set to
-    /// `None`, this defaults to `true`. Only used for teams.
-    pub is_project_insights_enabled: Option<bool>,
+    /// Whether Project Insights is enabled for this project.
+    ///
+    /// Defaults to `true`. Only used for teams.
+    #[builder(default = true)]
+    pub is_project_insights_enabled: bool,
 }
 
 impl CommandArgs for AddProject {
@@ -54,7 +58,8 @@ impl CommandArgs for AddProject {
 }
 
 /// Update an existing project.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct UpdateProject {
     /// The ID of the project to be updated.
     pub id: Id,
@@ -81,9 +86,11 @@ pub struct UpdateProject {
     pub is_link_sharing_enabled: Option<bool>,
     /// Project access configuration.
     pub access: Option<ProjectAccess>,
-    /// Whether Project Insights is enabled for this project. If set to
-    /// `None`, this defaults to `true`. Only used for teams.
-    pub is_project_insights_enabled: Option<bool>,
+    /// Whether Project Insights is enabled for this project.
+    ///
+    /// Defaults to `true`. Only used for teams.
+    #[builder(default = true)]
+    pub is_project_insights_enabled: bool,
     /// The default role a user can have. Only used for teams.
     pub collaborator_role_default: Option<Role>,
 }
@@ -94,7 +101,8 @@ impl CommandArgs for UpdateProject {
 }
 
 /// Update the parent project of a project.
-#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct MoveProject {
     /// The ID of the project.
     pub id: String,
@@ -122,7 +130,8 @@ impl CommandArgs for MoveProject {
 /// - Moving a project to a workspace affects all its collaborators.
 ///   Collaborators who are not members of the target workspace will be added
 ///   as guests, if guest members are allowed in the target workspace.
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct MoveProjectIntoWorkspace {
     /// The ID of the project.
     #[serde(rename = "project_id")]
@@ -158,7 +167,8 @@ impl CommandArgs for MoveProjectIntoWorkspace {
 ///
 /// Only the original creator of the project has permissions to do this, and
 /// only if they are still currently an admin of said workspace.
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct MoveProjectOutOfWorkspace {
     /// The ID of the project being moved out.
     #[serde(rename = "project_id")]
@@ -185,7 +195,8 @@ impl CommandArgs for MoveProjectOutOfWorkspace {
 ///
 /// Workspace projects can only be deleted by users with `Role::Admin` and it
 /// must be archived first.
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct DeleteProject {
     /// The ID of the project to delete.
     pub id: Id,
@@ -197,7 +208,8 @@ impl CommandArgs for DeleteProject {
 }
 
 /// Archive a project and its descendants.
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct ArchiveProject {
     /// The ID of the project to archive.
     pub id: Id,
@@ -209,7 +221,8 @@ impl CommandArgs for ArchiveProject {
 }
 
 /// Unarchive a project and its descendants.
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct UnarchiveProject {
     /// The ID of the project to unarchive.
     pub id: Id,
@@ -221,7 +234,8 @@ impl CommandArgs for UnarchiveProject {
 }
 
 /// Unarchive a project and its descendants.
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[builder(on(String, into), on(Id, into))]
 pub struct ChangeProjectRole {
     /// The ID of the project to change the role for.
     pub id: Id,
