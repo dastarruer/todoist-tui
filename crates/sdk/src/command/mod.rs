@@ -52,8 +52,70 @@ pub trait CommandArgs {
     /// The command string to be sent to the Todoist API, e.g. `"item_move"`,
     /// `"item_add"`, etc.
     const TYPE: &str;
-
     /// Commands that create resources will require a `temp_id` when sending to
     /// the Todoist API.
     const CREATES_RESOURCE: bool;
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use crate::command::task::{AddTask, CloseTask, DeleteTask};
+
+    use super::*;
+
+    #[test]
+    fn creating_command_attaches_a_temp_id() {
+        let cmd = Command::new(AddTask::default());
+        assert!(cmd.temp_id.is_some());
+    }
+
+    #[test]
+    fn non_creating_command_has_no_temp_id() {
+        let cmd = Command::new(DeleteTask::default());
+        assert!(cmd.temp_id.is_none());
+    }
+
+    #[test]
+    fn temp_id_is_omitted_from_json_when_absent() {
+        let cmd = Command::new(DeleteTask::default());
+        let value = serde_json::to_value(&cmd).unwrap();
+        assert!(
+            value.get("temp_id").is_none(),
+            "temp_id should be skipped, not null"
+        );
+    }
+
+    #[test]
+    fn temp_id_is_present_in_json_when_set() {
+        let cmd = Command::new(AddTask::default());
+        let value = serde_json::to_value(&cmd).unwrap();
+        assert!(value.get("temp_id").is_some());
+    }
+
+    #[test]
+    fn serialized_command_has_correct_type_tag() {
+        let cmd = Command::new(CloseTask::default());
+        let value = serde_json::to_value(&cmd).unwrap();
+        pretty_assertions::assert_eq!(value["type"], json!("item_close"));
+    }
+
+    #[test]
+    fn serialized_command_nests_args_under_args_key() {
+        let cmd = Command::new(DeleteTask::default());
+        let value = serde_json::to_value(&cmd).unwrap();
+        assert!(value.get("args").is_some());
+        assert!(value["args"].get("id").is_some());
+    }
+
+    #[test]
+    fn every_serialized_command_includes_a_valid_uuid() {
+        let cmd = Command::new(CloseTask::default());
+        let value = serde_json::to_value(&cmd).unwrap();
+        let uuid_str = value["uuid"]
+            .as_str()
+            .expect("uuid should serialize as a string");
+        assert!(Uuid::parse_str(uuid_str).is_ok());
+    }
 }

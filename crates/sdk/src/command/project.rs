@@ -216,7 +216,7 @@ pub struct UnarchiveProject {
 }
 
 impl CommandArgs for UnarchiveProject {
-    const TYPE: &str = "project_archive";
+    const TYPE: &str = "project_unarchive";
     const CREATES_RESOURCE: bool = false;
 }
 
@@ -236,4 +236,44 @@ pub struct ChangeProjectRole {
 impl CommandArgs for ChangeProjectRole {
     const TYPE: &str = "project_change_role";
     const CREATES_RESOURCE: bool = false;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn command_types() {
+        pretty_assertions::assert_eq!(AddProject::TYPE, "project_add");
+        pretty_assertions::assert_eq!(UpdateProject::TYPE, "project_update");
+        pretty_assertions::assert_eq!(MoveProject::TYPE, "project_move");
+        pretty_assertions::assert_eq!(MoveProjectIntoWorkspace::TYPE, "project_move_to_workspace");
+        pretty_assertions::assert_eq!(MoveProjectOutOfWorkspace::TYPE, "project_move_to_personal");
+        pretty_assertions::assert_eq!(DeleteProject::TYPE, "project_delete");
+        pretty_assertions::assert_eq!(ArchiveProject::TYPE, "project_archive");
+        pretty_assertions::assert_eq!(UnarchiveProject::TYPE, "project_unarchive");
+        pretty_assertions::assert_eq!(ChangeProjectRole::TYPE, "project_change_role");
+    }
+
+    #[test]
+    fn creates_resource() {
+        const {
+            assert!(AddProject::CREATES_RESOURCE);
+            assert!(!UpdateProject::CREATES_RESOURCE);
+            assert!(!MoveProject::CREATES_RESOURCE);
+            assert!(!MoveProjectIntoWorkspace::CREATES_RESOURCE);
+            assert!(!MoveProjectOutOfWorkspace::CREATES_RESOURCE);
+            assert!(!DeleteProject::CREATES_RESOURCE);
+            assert!(!ArchiveProject::CREATES_RESOURCE);
+            assert!(!UnarchiveProject::CREATES_RESOURCE);
+            assert!(!ChangeProjectRole::CREATES_RESOURCE);
+        }
+    }
+
+    #[test]
+    fn use_lro_is_true() {
+        // These flags should always be true
+        assert!(MoveProjectIntoWorkspace::default().use_lro);
+        assert!(MoveProjectOutOfWorkspace::default().use_lro);
+    }
 }

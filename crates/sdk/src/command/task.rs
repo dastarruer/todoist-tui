@@ -268,3 +268,58 @@ impl CommandArgs for UpdateTaskDayOrders {
     const TYPE: &str = "item_update_day_orders";
     const CREATES_RESOURCE: bool = false;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn command_types() {
+        pretty_assertions::assert_eq!(AddTask::TYPE, "item_add");
+        pretty_assertions::assert_eq!(UpdateTask::TYPE, "item_update");
+        pretty_assertions::assert_eq!(MoveTask::TYPE, "item_move");
+        pretty_assertions::assert_eq!(DeleteTask::TYPE, "item_delete");
+        pretty_assertions::assert_eq!(CompleteTask::TYPE, "item_complete");
+        pretty_assertions::assert_eq!(UncompleteTask::TYPE, "item_uncomplete");
+        pretty_assertions::assert_eq!(CompleteRecurringTask::TYPE, "item_update_date_complete");
+        pretty_assertions::assert_eq!(CloseTask::TYPE, "item_close");
+        pretty_assertions::assert_eq!(UpdateTaskDayOrders::TYPE, "item_update_day_orders");
+    }
+
+    #[test]
+    fn creates_resource() {
+        const {
+            assert!(AddTask::CREATES_RESOURCE);
+            assert!(!UpdateTask::CREATES_RESOURCE);
+            assert!(!MoveTask::CREATES_RESOURCE);
+            assert!(!DeleteTask::CREATES_RESOURCE);
+            assert!(!CompleteTask::CREATES_RESOURCE);
+            assert!(!UncompleteTask::CREATES_RESOURCE);
+            assert!(!CompleteRecurringTask::CREATES_RESOURCE);
+            assert!(!CloseTask::CREATES_RESOURCE);
+            assert!(!UpdateTaskDayOrders::CREATES_RESOURCE);
+        }
+    }
+
+    #[test]
+    fn update_task_day_orders_holds_multiple_mappings() {
+        let mut ids_to_orders: HashMap<Id, i32> = HashMap::new();
+        ids_to_orders.insert(Id(String::from("111")), 1);
+        ids_to_orders.insert(Id(String::from("222")), 2);
+
+        let args = UpdateTaskDayOrders {
+            ids_to_orders: ids_to_orders.clone(),
+        };
+        let args = serde_json::to_value(&args).unwrap();
+        let obj = args["ids_to_orders"]
+            .as_object()
+            .expect("ids_to_orders should serialize as a JSON object");
+        let expected = r#"{"ids_to_orders":{"111":1,"222":2}}"#;
+
+        pretty_assertions::assert_eq!(obj.len(), 2);
+        pretty_assertions::assert_eq!(
+            serde_json::to_string(&args).expect("args should be successfully serialized"),
+            expected
+        );
+    }
+}
