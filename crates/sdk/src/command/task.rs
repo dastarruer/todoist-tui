@@ -127,13 +127,13 @@ pub struct UpdateTask {
     pub labels: Option<Vec<String>>,
     /// The ID of user who assigns the current task. This makes sense for
     /// shared projects only. Accepts `0` or any user ID from the list of
-    /// project collaborators. If this value is unset or invalid, it will be
+    /// project collaborators. If this value is `None`, it will be
     /// automatically setup to your UID.
-    pub assigned_by_uid: Option<Uid>,
+    pub assigned_by_uid: Option<Option<Uid>>,
     /// The ID of user who is responsible for accomplishing the current task.
     /// This makes sense for shared projects only. Accepts any user ID from the
     /// list of project collaborators or `None` or an empty string to unset.
-    pub responsible_uid: Option<Uid>,
+    pub responsible_uid: Option<Option<Uid>>,
     /// The order of the task inside the Today or Next 7 days view. Smaller
     /// values place the task nearer the top.
     pub day_order: Option<i32>,

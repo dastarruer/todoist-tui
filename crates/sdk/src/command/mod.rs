@@ -155,4 +155,18 @@ mod tests {
             expected
         );
     }
+
+    #[test]
+    fn serialize_null_values() {
+        // parent_id here is set to None, which should serialize as null
+        let cmd = Command::new(MoveProject::builder().id("123").parent_id(None).build());
+        let expected = format!(
+            r#"{{"type":"project_move","args":{{"id":"123","parent_id":null}},"uuid":"{}"}}"#,
+            cmd.uuid
+        );
+        pretty_assertions::assert_eq!(
+            serde_json::to_string(&cmd).expect("cmd should be successfully deserialized"),
+            expected
+        );
+    }
 }

@@ -121,7 +121,7 @@ pub struct MoveProject {
     pub id: String,
     /// The ID of the parent project. If set to `None`, the project will be
     /// moved to the root.
-    pub parent_id: Option<String>,
+    pub parent_id: Option<Option<String>>,
 }
 
 impl CommandArgs for MoveProject {
