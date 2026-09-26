@@ -1,0 +1,172 @@
+#![allow(clippy::duplicated_attributes)]
+
+pub mod project;
+pub mod task;
+
+use erased_serde::serialize_trait_object;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
+pub struct Command<T> {
+    #[serde(rename = "type")]
+    kind: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    temp_id: Option<Uuid>,
+    args: T,
+    uuid: Uuid,
+}
+
+impl<T: CommandArgs> Command<T> {
+    #[must_use]
+    pub fn new(cmd: T) -> Self {
+        let uuid = Uuid::new_v4();
+        let temp_id = if cmd.creates_resource() {
+            Some(Uuid::new_v4())
+        } else {
+            None
+        };
+
+        Self {
+            kind: String::from(cmd.command_type()),
+            temp_id,
+            args: cmd,
+            uuid,
+        }
+    }
+}
+
+impl<T> Command<T> {
+    /// Temporary resource ID. Only specified for commands that create a new
+    /// resource.
+    ///
+    /// An example of how temporary IDs can be used and referenced:
+    ///
+    /// ```rust
+    /// # use todoist_sdk::command::{Command, project::AddProject, task::AddTask};
+    /// # use todoist_sdk::types::Id;
+    /// let project = Command::new(
+    ///    AddProject::builder()
+    ///        .name("Milk Run")
+    ///        .description("things to do to buy milk")
+    ///        .build(),
+    /// );
+    /// let temp_id = project.temp_id().expect("project should have `temp_id` field");
+    ///
+    /// let task = Command::new(AddTask::builder().content("Buy Milk").project_id(temp_id).build());
+    /// ```
+    ///
+    /// Here, a task is added to the new project by referencing its `temp_id`
+    /// before it is actually created through the Todoist API. This is a good
+    /// way to batch commands that rely on non-existent resources that are
+    /// soon-to-be-created.
+    pub const fn temp_id(&self) -> Option<Uuid> {
+        self.temp_id
+    }
+}
+
+/// Trait for structs that can be send as Todoist commands.
+pub trait CommandArgs: erased_serde::Serialize + Send + Sync {
+    /// The command string to be sent to the Todoist API, e.g. `"item_move"`,
+    /// `"item_add"`, etc.
+    fn command_type(&self) -> &'static str;
+    /// Commands that create resources will require a `temp_id` when sending to
+    /// the Todoist API.
+    fn creates_resource(&self) -> bool;
+}
+
+serialize_trait_object!(CommandArgs);
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use crate::command::{
+        project::MoveProject,
+        task::{AddTask, CloseTask, DeleteTask},
+    };
+
+    use super::*;
+
+    #[test]
+    fn creating_command_attaches_a_temp_id() {
+        let cmd = Command::new(AddTask::builder().content("Buy Milk").build());
+        assert!(cmd.temp_id.is_some());
+    }
+
+    #[test]
+    fn non_creating_command_has_no_temp_id() {
+        let cmd = Command::new(DeleteTask::builder().id("123").build());
+        assert!(cmd.temp_id.is_none());
+    }
+
+    #[test]
+    fn temp_id_is_omitted_from_json_when_absent() {
+        let cmd = Command::new(DeleteTask::builder().id("123").build());
+        let value = serde_json::to_value(&cmd).unwrap();
+        assert!(
+            value.get("temp_id").is_none(),
+            "temp_id should be skipped, not null"
+        );
+    }
+
+    #[test]
+    fn temp_id_is_present_in_json_when_set() {
+        let cmd = Command::new(AddTask::builder().content(String::from("Buy Milk")).build());
+        let value = serde_json::to_value(&cmd).unwrap();
+        assert!(value.get("temp_id").is_some());
+    }
+
+    #[test]
+    fn serialized_command_has_correct_type_tag() {
+        let cmd = Command::new(CloseTask::builder().id("123").build());
+        let value = serde_json::to_value(&cmd).unwrap();
+        pretty_assertions::assert_eq!(value["type"], json!("item_close"));
+    }
+
+    #[test]
+    fn serialized_command_nests_args_under_args_key() {
+        let cmd = Command::new(DeleteTask::builder().id("123").build());
+        let value = serde_json::to_value(&cmd).unwrap();
+        assert!(value.get("args").is_some());
+        assert!(value["args"].get("id").is_some());
+    }
+
+    #[test]
+    fn every_serialized_command_includes_a_valid_uuid() {
+        let cmd = Command::new(CloseTask::builder().id("123").build());
+        let value = serde_json::to_value(&cmd).unwrap();
+        let uuid_str = value["uuid"]
+            .as_str()
+            .expect("uuid should serialize as a string");
+        assert!(Uuid::parse_str(uuid_str).is_ok());
+    }
+
+    #[test]
+    fn skip_serializing_none_values() {
+        let cmd = Command::new(MoveProject::builder().id("123").build());
+        // parent_id is intentionally omitted here, since it is set to None in the command
+        let expected = format!(
+            r#"{{"type":"project_move","args":{{"id":"123"}},"uuid":"{}"}}"#,
+            cmd.uuid
+        );
+        pretty_assertions::assert_eq!(
+            serde_json::to_string(&cmd).expect("cmd should be successfully deserialized"),
+            expected
+        );
+    }
+
+    #[test]
+    fn serialize_null_values() {
+        // parent_id here is set to None, which should serialize as null
+        let cmd = Command::new(MoveProject::builder().id("123").parent_id(None).build());
+        let expected = format!(
+            r#"{{"type":"project_move","args":{{"id":"123","parent_id":null}},"uuid":"{}"}}"#,
+            cmd.uuid
+        );
+        pretty_assertions::assert_eq!(
+            serde_json::to_string(&cmd).expect("cmd should be successfully deserialized"),
+            expected
+        );
+    }
+}

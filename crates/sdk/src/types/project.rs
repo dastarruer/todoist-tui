@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn deserialize_task() {
-        let json = include_str!("../fixtures/projects/project.json");
+        let json = include_str!("./fixtures/projects/project.json");
         let project = serde_json::from_str::<Project>(json)
             .expect("project should be successfully deserialized");
         let expected = Project {
