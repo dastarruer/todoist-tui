@@ -300,7 +300,7 @@ mod tests {
 
     #[test]
     fn deserialize_task() {
-        let json = include_str!("../fixtures/tasks/task.json");
+        let json = include_str!("./fixtures/tasks/task.json");
         let task =
             serde_json::from_str::<Task>(json).expect("task should be successfully deserialized");
         let expected = Task {
@@ -339,7 +339,7 @@ mod tests {
 
     #[test]
     fn deserialize_tasks_response() {
-        let json = include_str!("../fixtures/tasks/tasks.json");
+        let json = include_str!("./fixtures/tasks/tasks.json");
         let response = serde_json::from_str::<SyncResponse>(json)
             .expect("tasks response should be successfully deserialized");
         let expected = Task {
