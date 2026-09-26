@@ -141,6 +141,18 @@ impl APIClient {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SyncKey(String);
 
+impl From<String> for SyncKey {
+    fn from(value: String) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&str> for SyncKey {
+    fn from(value: &str) -> Self {
+        Self::from(String::from(value))
+    }
+}
+
 impl SyncKey {
     /// Retrieve the sync key.
     #[must_use]
