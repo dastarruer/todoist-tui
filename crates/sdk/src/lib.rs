@@ -3,7 +3,7 @@ pub mod error;
 pub mod types;
 
 use crate::{
-    command::CommandArgs,
+    command::{Command, CommandArgs},
     error::Result,
     types::{project::Project, task::Task},
 };
@@ -110,7 +110,10 @@ impl APIClient {
     /// Returns an error if:
     /// - An error occurs while sending the request.
     /// - An error status code (`400-599`) is returned.
-    pub async fn send<T: CommandArgs + Serialize + Sync>(&self, commands: &[T]) -> Result<()> {
+    pub async fn send<T: CommandArgs + Serialize + Sync>(
+        &self,
+        commands: &[Command<T>],
+    ) -> Result<()> {
         let commands = serde_json::to_string(commands)?;
         let data = [("commands", commands)];
         // don't really care about response for now
