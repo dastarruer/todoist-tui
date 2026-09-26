@@ -1,3 +1,4 @@
+pub mod project;
 pub mod task;
 
 use serde::{Deserialize, Serialize};
