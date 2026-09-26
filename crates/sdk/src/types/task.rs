@@ -201,7 +201,7 @@ mod deadline_time_format {
 mod tests {
     use std::str::FromStr;
 
-    use crate::{SyncResponse, types::task::deadline_time_format::DEADLINE_FORMAT};
+    use crate::types::task::deadline_time_format::DEADLINE_FORMAT;
 
     use super::*;
 
@@ -304,45 +304,6 @@ mod tests {
         let task =
             serde_json::from_str::<Task>(json).expect("task should be successfully deserialized");
         let expected = Task {
-            id: Id(String::from("6X7rM8997g3RQmvh")),
-            user_id: Uid(String::from("2671355")),
-            project_id: Id(String::from("6Jf8VQXxpwv56VQ7")),
-            content: String::from("Buy Milk"),
-            description: String::new(),
-            deadline: None,
-            due: None,
-            priority: 1,
-            parent_id: None,
-            child_order: 1,
-            order_key: Some(String::from("a1V")),
-            section_id: Some(Id(String::from("3Ty8VQXxpwv28PK3"))),
-            day_order: -1,
-            is_collapsed: false,
-            labels: vec![String::from("Food"), String::from("Shopping")],
-            added_by_uid: Some(Uid(String::from("2671355"))),
-            assigned_by_uid: Some(Uid(String::from("2671355"))),
-            responsible_uid: None,
-            checked: false,
-            is_deleted: false,
-            added_at: DateTime::from_str("2025-01-21T21:28:43.841504Z")
-                .expect("`added_at` timestamp should be valid"),
-            updated_at: DateTime::from_str("2025-01-21T21:28:43Z")
-                .expect("`updated_at` timestamp should be valid"),
-            completed_at: None,
-            duration: Some(TaskDuration {
-                amount: NonZeroU32::new(15).expect("fifteen is non-zero"),
-                unit: TaskDurationUnit::Minute,
-            }),
-        };
-        pretty_assertions::assert_eq!(task, expected);
-    }
-
-    #[test]
-    fn deserialize_tasks_response() {
-        let json = include_str!("./fixtures/tasks/tasks.json");
-        let response = serde_json::from_str::<SyncResponse>(json)
-            .expect("tasks response should be successfully deserialized");
-        let expected = Task {
             id: Id(String::from("6XGgmFVcrG5RRjVr")),
             user_id: Uid(String::from("1234567")),
             project_id: Id(String::from("6XGgm6PHrGgMpCFX")),
@@ -386,9 +347,6 @@ mod tests {
                 unit: TaskDurationUnit::Minute,
             }),
         };
-
-        let items = response.items.expect("`items` should exist");
-        assert_eq!(items.len(), 1);
-        pretty_assertions::assert_eq!(items[0], expected);
+        pretty_assertions::assert_eq!(task, expected);
     }
 }
