@@ -13,6 +13,7 @@ use crate::{
 /// Add a new project.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct AddProject {
     /// The name of the project.
@@ -55,13 +56,18 @@ pub struct AddProject {
 }
 
 impl CommandArgs for AddProject {
-    const TYPE: &str = "project_add";
-    const CREATES_RESOURCE: bool = true;
+    fn command_type(&self) -> &'static str {
+        "project_add"
+    }
+    fn creates_resource(&self) -> bool {
+        true
+    }
 }
 
 /// Update an existing project.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct UpdateProject {
     /// The ID of the project to be updated.
@@ -97,13 +103,18 @@ pub struct UpdateProject {
 }
 
 impl CommandArgs for UpdateProject {
-    const TYPE: &str = "project_update";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "project_update"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// Update the parent project of a project.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct MoveProject {
     /// The ID of the project.
@@ -114,8 +125,12 @@ pub struct MoveProject {
 }
 
 impl CommandArgs for MoveProject {
-    const TYPE: &str = "project_move";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "project_move"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// Moves a personal project into the target workspace.
@@ -151,8 +166,25 @@ pub struct MoveProjectIntoWorkspace {
 }
 
 impl CommandArgs for MoveProjectIntoWorkspace {
-    const TYPE: &str = "project_move_to_workspace";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "project_move_to_workspace"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
+}
+
+#[cfg(test)]
+impl Default for MoveProjectIntoWorkspace {
+    fn default() -> Self {
+        Self {
+            id: Id::default(),
+            workspace_id: Id::default(),
+            is_invite_only: None,
+            folder_id: None,
+            use_lro: true,
+        }
+    }
 }
 
 /// Moves a project inside a workspace out back into a user's personal space.
@@ -172,8 +204,22 @@ pub struct MoveProjectOutOfWorkspace {
 }
 
 impl CommandArgs for MoveProjectOutOfWorkspace {
-    const TYPE: &str = "project_move_to_personal";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "project_move_to_personal"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
+}
+
+#[cfg(test)]
+impl Default for MoveProjectOutOfWorkspace {
+    fn default() -> Self {
+        Self {
+            id: Id::default(),
+            use_lro: true,
+        }
+    }
 }
 
 /// Delete an existing project and all its descendants.
@@ -182,6 +228,7 @@ impl CommandArgs for MoveProjectOutOfWorkspace {
 /// must be archived first.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct DeleteProject {
     /// The ID of the project to delete.
@@ -189,13 +236,18 @@ pub struct DeleteProject {
 }
 
 impl CommandArgs for DeleteProject {
-    const TYPE: &str = "project_delete";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "project_delete"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// Archive a project and its descendants.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct ArchiveProject {
     /// The ID of the project to archive.
@@ -203,13 +255,18 @@ pub struct ArchiveProject {
 }
 
 impl CommandArgs for ArchiveProject {
-    const TYPE: &str = "project_archive";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "project_archive"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// Unarchive a project and its descendants.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct UnarchiveProject {
     /// The ID of the project to unarchive.
@@ -217,13 +274,18 @@ pub struct UnarchiveProject {
 }
 
 impl CommandArgs for UnarchiveProject {
-    const TYPE: &str = "project_unarchive";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "project_unarchive"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// Unarchive a project and its descendants.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct ChangeProjectRole {
     /// The ID of the project to change the role for.
@@ -237,8 +299,12 @@ pub struct ChangeProjectRole {
 }
 
 impl CommandArgs for ChangeProjectRole {
-    const TYPE: &str = "project_change_role";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "project_change_role"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]
@@ -247,47 +313,46 @@ mod tests {
 
     #[test]
     fn command_types() {
-        pretty_assertions::assert_eq!(AddProject::TYPE, "project_add");
-        pretty_assertions::assert_eq!(UpdateProject::TYPE, "project_update");
-        pretty_assertions::assert_eq!(MoveProject::TYPE, "project_move");
-        pretty_assertions::assert_eq!(MoveProjectIntoWorkspace::TYPE, "project_move_to_workspace");
-        pretty_assertions::assert_eq!(MoveProjectOutOfWorkspace::TYPE, "project_move_to_personal");
-        pretty_assertions::assert_eq!(DeleteProject::TYPE, "project_delete");
-        pretty_assertions::assert_eq!(ArchiveProject::TYPE, "project_archive");
-        pretty_assertions::assert_eq!(UnarchiveProject::TYPE, "project_unarchive");
-        pretty_assertions::assert_eq!(ChangeProjectRole::TYPE, "project_change_role");
+        pretty_assertions::assert_eq!(AddProject::default().command_type(), "project_add");
+        pretty_assertions::assert_eq!(UpdateProject::default().command_type(), "project_update");
+        pretty_assertions::assert_eq!(MoveProject::default().command_type(), "project_move");
+        pretty_assertions::assert_eq!(
+            MoveProjectIntoWorkspace::default().command_type(),
+            "project_move_to_workspace"
+        );
+        pretty_assertions::assert_eq!(
+            MoveProjectOutOfWorkspace::default().command_type(),
+            "project_move_to_personal"
+        );
+        pretty_assertions::assert_eq!(DeleteProject::default().command_type(), "project_delete");
+        pretty_assertions::assert_eq!(ArchiveProject::default().command_type(), "project_archive");
+        pretty_assertions::assert_eq!(
+            UnarchiveProject::default().command_type(),
+            "project_unarchive"
+        );
+        pretty_assertions::assert_eq!(
+            ChangeProjectRole::default().command_type(),
+            "project_change_role"
+        );
     }
 
     #[test]
     fn creates_resource() {
-        const {
-            assert!(AddProject::CREATES_RESOURCE);
-            assert!(!UpdateProject::CREATES_RESOURCE);
-            assert!(!MoveProject::CREATES_RESOURCE);
-            assert!(!MoveProjectIntoWorkspace::CREATES_RESOURCE);
-            assert!(!MoveProjectOutOfWorkspace::CREATES_RESOURCE);
-            assert!(!DeleteProject::CREATES_RESOURCE);
-            assert!(!ArchiveProject::CREATES_RESOURCE);
-            assert!(!UnarchiveProject::CREATES_RESOURCE);
-            assert!(!ChangeProjectRole::CREATES_RESOURCE);
-        }
+        assert!(AddProject::default().creates_resource());
+        assert!(!UpdateProject::default().creates_resource());
+        assert!(!MoveProject::default().creates_resource());
+        assert!(!MoveProjectIntoWorkspace::default().creates_resource());
+        assert!(!MoveProjectOutOfWorkspace::default().creates_resource());
+        assert!(!DeleteProject::default().creates_resource());
+        assert!(!ArchiveProject::default().creates_resource());
+        assert!(!UnarchiveProject::default().creates_resource());
+        assert!(!ChangeProjectRole::default().creates_resource());
     }
 
     #[test]
     fn use_lro_is_true() {
         // use_lro should always be true
-        assert!(
-            MoveProjectIntoWorkspace::builder()
-                .id("123")
-                .workspace_id("123")
-                .build()
-                .use_lro
-        );
-        assert!(
-            MoveProjectOutOfWorkspace::builder()
-                .id("123")
-                .build()
-                .use_lro
-        );
+        assert!(MoveProjectIntoWorkspace::default().use_lro);
+        assert!(MoveProjectOutOfWorkspace::default().use_lro);
     }
 }

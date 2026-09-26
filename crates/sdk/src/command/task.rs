@@ -16,6 +16,7 @@ use crate::{
 /// Add a task.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct AddTask {
     /// The text of the task. This value may contain markdown-formatted text
@@ -82,8 +83,12 @@ pub struct AddTask {
 }
 
 impl CommandArgs for AddTask {
-    const TYPE: &str = "item_add";
-    const CREATES_RESOURCE: bool = true;
+    fn command_type(&self) -> &'static str {
+        "item_add"
+    }
+    fn creates_resource(&self) -> bool {
+        true
+    }
 }
 
 /// Updates task attributes.
@@ -93,6 +98,7 @@ impl CommandArgs for AddTask {
 /// used instead.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct UpdateTask {
     /// The ID of the task.
@@ -143,8 +149,12 @@ pub struct UpdateTask {
 }
 
 impl CommandArgs for UpdateTask {
-    const TYPE: &str = "item_update";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "item_update"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// Move task to a different location.
@@ -152,6 +162,7 @@ impl CommandArgs for UpdateTask {
 /// Only one of `parent_id`, `section_id` or `project_id` must be set.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct MoveTask {
     /// The ID of the task.
@@ -168,13 +179,18 @@ pub struct MoveTask {
 }
 
 impl CommandArgs for MoveTask {
-    const TYPE: &str = "item_move";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "item_move"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// Delete a task and all its sub-tasks.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct DeleteTask {
     /// ID of the task to delete.
@@ -182,14 +198,19 @@ pub struct DeleteTask {
 }
 
 impl CommandArgs for DeleteTask {
-    const TYPE: &str = "item_delete";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "item_delete"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// Completes a task and its sub-tasks and moves them to the archive. See also
 /// `CloseTask` for a simplified version of the command.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct CompleteTask {
     /// Task ID to complete.
@@ -203,8 +224,12 @@ pub struct CompleteTask {
 }
 
 impl CommandArgs for CompleteTask {
-    const TYPE: &str = "item_complete";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "item_complete"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// (Un)completes and restores a completed task.
@@ -216,6 +241,7 @@ impl CommandArgs for CompleteTask {
 /// their parent, after any previously active tasks.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct UncompleteTask {
     /// Task ID to uncomplete.
@@ -223,8 +249,12 @@ pub struct UncompleteTask {
 }
 
 impl CommandArgs for UncompleteTask {
-    const TYPE: &str = "item_uncomplete";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "item_uncomplete"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// Complete a recurring task.
@@ -234,6 +264,7 @@ impl CommandArgs for UncompleteTask {
 /// `CloseTask` for a simplified version of the command.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct CompleteRecurringTask {
     /// Task ID to complete.
@@ -250,8 +281,12 @@ pub struct CompleteRecurringTask {
 }
 
 impl CommandArgs for CompleteRecurringTask {
-    const TYPE: &str = "item_update_date_complete";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "item_update_date_complete"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// A simplified version of `CompleteTask` / `CompleteRecurringTask`.
@@ -261,6 +296,7 @@ impl CommandArgs for CompleteRecurringTask {
 /// scheduled to their next occurrence.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct CloseTask {
     /// The ID of the task to close.
@@ -268,8 +304,12 @@ pub struct CloseTask {
 }
 
 impl CommandArgs for CloseTask {
-    const TYPE: &str = "item_close";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "item_close"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 /// Update the day orders of multiple tasks at once.
@@ -278,6 +318,7 @@ impl CommandArgs for CloseTask {
 /// than just one.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 #[builder(on(String, into), on(Id, into))]
 pub struct UpdateTaskDayOrders {
     /// A mapping where each key is a task ID and each value is a `day_order`.
@@ -285,8 +326,12 @@ pub struct UpdateTaskDayOrders {
 }
 
 impl CommandArgs for UpdateTaskDayOrders {
-    const TYPE: &str = "item_update_day_orders";
-    const CREATES_RESOURCE: bool = false;
+    fn command_type(&self) -> &'static str {
+        "item_update_day_orders"
+    }
+    fn creates_resource(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]
@@ -295,30 +340,34 @@ mod tests {
 
     #[test]
     fn command_types() {
-        pretty_assertions::assert_eq!(AddTask::TYPE, "item_add");
-        pretty_assertions::assert_eq!(UpdateTask::TYPE, "item_update");
-        pretty_assertions::assert_eq!(MoveTask::TYPE, "item_move");
-        pretty_assertions::assert_eq!(DeleteTask::TYPE, "item_delete");
-        pretty_assertions::assert_eq!(CompleteTask::TYPE, "item_complete");
-        pretty_assertions::assert_eq!(UncompleteTask::TYPE, "item_uncomplete");
-        pretty_assertions::assert_eq!(CompleteRecurringTask::TYPE, "item_update_date_complete");
-        pretty_assertions::assert_eq!(CloseTask::TYPE, "item_close");
-        pretty_assertions::assert_eq!(UpdateTaskDayOrders::TYPE, "item_update_day_orders");
+        pretty_assertions::assert_eq!(AddTask::default().command_type(), "item_add");
+        pretty_assertions::assert_eq!(UpdateTask::default().command_type(), "item_update");
+        pretty_assertions::assert_eq!(MoveTask::default().command_type(), "item_move");
+        pretty_assertions::assert_eq!(DeleteTask::default().command_type(), "item_delete");
+        pretty_assertions::assert_eq!(CompleteTask::default().command_type(), "item_complete");
+        pretty_assertions::assert_eq!(UncompleteTask::default().command_type(), "item_uncomplete");
+        pretty_assertions::assert_eq!(
+            CompleteRecurringTask::default().command_type(),
+            "item_update_date_complete"
+        );
+        pretty_assertions::assert_eq!(CloseTask::default().command_type(), "item_close");
+        pretty_assertions::assert_eq!(
+            UpdateTaskDayOrders::default().command_type(),
+            "item_update_day_orders"
+        );
     }
 
     #[test]
     fn creates_resource() {
-        const {
-            assert!(AddTask::CREATES_RESOURCE);
-            assert!(!UpdateTask::CREATES_RESOURCE);
-            assert!(!MoveTask::CREATES_RESOURCE);
-            assert!(!DeleteTask::CREATES_RESOURCE);
-            assert!(!CompleteTask::CREATES_RESOURCE);
-            assert!(!UncompleteTask::CREATES_RESOURCE);
-            assert!(!CompleteRecurringTask::CREATES_RESOURCE);
-            assert!(!CloseTask::CREATES_RESOURCE);
-            assert!(!UpdateTaskDayOrders::CREATES_RESOURCE);
-        }
+        assert!(AddTask::default().creates_resource());
+        assert!(!UpdateTask::default().creates_resource());
+        assert!(!MoveTask::default().creates_resource());
+        assert!(!DeleteTask::default().creates_resource());
+        assert!(!CompleteTask::default().creates_resource());
+        assert!(!UncompleteTask::default().creates_resource());
+        assert!(!CompleteRecurringTask::default().creates_resource());
+        assert!(!CloseTask::default().creates_resource());
+        assert!(!UpdateTaskDayOrders::default().creates_resource());
     }
 
     #[test]

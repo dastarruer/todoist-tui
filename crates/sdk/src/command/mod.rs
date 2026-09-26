@@ -3,6 +3,7 @@
 pub mod project;
 pub mod task;
 
+use erased_serde::serialize_trait_object;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -20,14 +21,14 @@ impl<T: CommandArgs> Command<T> {
     #[must_use]
     pub fn new(cmd: T) -> Self {
         let uuid = Uuid::new_v4();
-        let temp_id = if T::CREATES_RESOURCE {
+        let temp_id = if cmd.creates_resource() {
             Some(Uuid::new_v4())
         } else {
             None
         };
 
         Self {
-            kind: String::from(T::TYPE),
+            kind: String::from(cmd.command_type()),
             temp_id,
             args: cmd,
             uuid,
@@ -65,14 +66,16 @@ impl<T> Command<T> {
 }
 
 /// Trait for structs that can be send as Todoist commands.
-pub trait CommandArgs {
+pub trait CommandArgs: erased_serde::Serialize + Send + Sync {
     /// The command string to be sent to the Todoist API, e.g. `"item_move"`,
     /// `"item_add"`, etc.
-    const TYPE: &str;
+    fn command_type(&self) -> &'static str;
     /// Commands that create resources will require a `temp_id` when sending to
     /// the Todoist API.
-    const CREATES_RESOURCE: bool;
+    fn creates_resource(&self) -> bool;
 }
+
+serialize_trait_object!(CommandArgs);
 
 #[cfg(test)]
 mod tests {

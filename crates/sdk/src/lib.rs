@@ -121,9 +121,9 @@ impl APIClient {
     ///
     /// In other words, even if this method returns `Ok`, make sure to check
     /// [`SyncWriteOutput::errors`] for info on failed commands.
-    pub async fn send<T: CommandArgs + Serialize + Sync>(
+    pub async fn send(
         &mut self,
-        commands: &[Command<T>],
+        commands: &[Command<&dyn CommandArgs>],
     ) -> Result<SyncWriteOutput> {
         let commands = serde_json::to_string(commands)?;
         let data = [("commands", commands)];
