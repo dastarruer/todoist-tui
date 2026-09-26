@@ -78,7 +78,10 @@ pub trait CommandArgs {
 mod tests {
     use serde_json::json;
 
-    use crate::command::task::{AddTask, CloseTask, DeleteTask};
+    use crate::command::{
+        project::MoveProject,
+        task::{AddTask, CloseTask, DeleteTask},
+    };
 
     use super::*;
 
@@ -134,5 +137,19 @@ mod tests {
             .as_str()
             .expect("uuid should serialize as a string");
         assert!(Uuid::parse_str(uuid_str).is_ok());
+    }
+
+    #[test]
+    fn skip_serializing_none_values() {
+        let cmd = Command::new(MoveProject::builder().id("123").build());
+        // parent_id is intentionally omitted here, since it is set to None in the command
+        let expected = format!(
+            r#"{{"type":"project_move","args":{{"id":"123"}},"uuid":"{}"}}"#,
+            cmd.uuid
+        );
+        pretty_assertions::assert_eq!(
+            serde_json::to_string(&cmd).expect("cmd should be successfully deserialized"),
+            expected
+        );
     }
 }

@@ -1,5 +1,6 @@
 use bon::Builder;
 use serde::Serialize;
+use serde_with::skip_serializing_none;
 
 use crate::{
     command::CommandArgs,
@@ -10,6 +11,7 @@ use crate::{
 };
 
 /// Add a new project.
+#[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
 #[builder(on(String, into), on(Id, into))]
 pub struct AddProject {
@@ -58,6 +60,7 @@ impl CommandArgs for AddProject {
 }
 
 /// Update an existing project.
+#[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
 #[builder(on(String, into), on(Id, into))]
 pub struct UpdateProject {
@@ -99,6 +102,7 @@ impl CommandArgs for UpdateProject {
 }
 
 /// Update the parent project of a project.
+#[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
 #[builder(on(String, into), on(Id, into))]
 pub struct MoveProject {
@@ -128,6 +132,7 @@ impl CommandArgs for MoveProject {
 /// - Moving a project to a workspace affects all its collaborators.
 ///   Collaborators who are not members of the target workspace will be added
 ///   as guests, if guest members are allowed in the target workspace.
+#[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
 #[builder(on(String, into), on(Id, into))]
 pub struct MoveProjectIntoWorkspace {
@@ -154,6 +159,7 @@ impl CommandArgs for MoveProjectIntoWorkspace {
 ///
 /// Only the original creator of the project has permissions to do this, and
 /// only if they are still currently an admin of said workspace.
+#[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
 #[builder(on(String, into), on(Id, into))]
 pub struct MoveProjectOutOfWorkspace {
@@ -174,6 +180,7 @@ impl CommandArgs for MoveProjectOutOfWorkspace {
 ///
 /// Workspace projects can only be deleted by users with `Role::Admin` and it
 /// must be archived first.
+#[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
 #[builder(on(String, into), on(Id, into))]
 pub struct DeleteProject {
@@ -187,6 +194,7 @@ impl CommandArgs for DeleteProject {
 }
 
 /// Archive a project and its descendants.
+#[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
 #[builder(on(String, into), on(Id, into))]
 pub struct ArchiveProject {
@@ -200,6 +208,7 @@ impl CommandArgs for ArchiveProject {
 }
 
 /// Unarchive a project and its descendants.
+#[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
 #[builder(on(String, into), on(Id, into))]
 pub struct UnarchiveProject {
@@ -213,6 +222,7 @@ impl CommandArgs for UnarchiveProject {
 }
 
 /// Unarchive a project and its descendants.
+#[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
 #[builder(on(String, into), on(Id, into))]
 pub struct ChangeProjectRole {
