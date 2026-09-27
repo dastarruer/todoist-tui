@@ -4,8 +4,8 @@ mod ui;
 use std::{env::var, io::Stdout, path::PathBuf};
 
 use color_eyre::eyre::Context;
-use crossterm::event::{self, Event, KeyCode};
 use flexi_logger::{FileSpec, Logger};
+use ratatui::crossterm::event::{self, Event, KeyCode};
 use ratatui::{Terminal, backend::CrosstermBackend};
 use todoist_sdk::APIClient;
 
@@ -16,9 +16,9 @@ use crate::{
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
-    let mut app = bootstrap_app().await?;
+    let app = bootstrap_app().await?;
     let mut terminal = ratatui::init();
-    run_app(&mut terminal, &mut app)?;
+    run_app(&mut terminal, app)?;
     ratatui::restore();
 
     Ok(())
@@ -57,10 +57,10 @@ async fn bootstrap_app() -> color_eyre::Result<App> {
 
 fn run_app(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    app: &mut App,
+    mut app: App,
 ) -> color_eyre::Result<bool> {
     loop {
-        terminal.draw(|f| ui(f, app))?;
+        terminal.draw(|f| ui(f, &app))?;
         if let Event::Key(key) = event::read()? {
             match &mut app.view {
                 ViewState::List => match key.code {
@@ -70,11 +70,11 @@ fn run_app(
                     KeyCode::Char('a') => app.start_adding_task(),
                     _ => {}
                 },
-                #[allow(clippy::single_match)]
-                #[allow(unused_variables)]
-                ViewState::AddTask { buffer } => match key.code {
+                ViewState::AddTask(textareas) => match key.code {
                     KeyCode::Esc => app.cancel_adding_task(),
-                    _ => {}
+                    _ => {
+                        let () = textareas.handle_key(key);
+                    }
                 },
             }
         }

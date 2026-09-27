@@ -6,7 +6,7 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Row, Table},
 };
 
-use crate::app::{App, ViewState};
+use crate::app::{AddTaskTextAreas, App, ViewState};
 
 pub fn ui(frame: &mut Frame, app: &App) {
     let chunks = Layout::default()
@@ -60,13 +60,13 @@ pub fn ui(frame: &mut Frame, app: &App) {
     ]));
     frame.render_widget(hints, footer_area);
 
-    if let ViewState::AddTask { buffer } = &app.view {
-        render_add_task_popup(frame, tasks_area, buffer);
+    if let ViewState::AddTask(textareas) = &app.view {
+        render_add_task_popup(frame, tasks_area, textareas);
     }
 }
 
 // https://ratatui.rs/recipes/layout/center-a-widget/#popups
-fn render_add_task_popup(frame: &mut Frame, area: Rect, buffer: &str) {
+fn render_add_task_popup(frame: &mut Frame, area: Rect, textareas: &AddTaskTextAreas) {
     let area = area.centered(Constraint::Max(50), Constraint::Max(10));
     let popup = Block::bordered();
     frame.render_widget(Clear, area);
@@ -76,16 +76,18 @@ fn render_add_task_popup(frame: &mut Frame, area: Rect, buffer: &str) {
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
         .split(popup.inner(area));
-    let content_input = Paragraph::new(buffer).block(Block::bordered().title("Task name:"));
+    let mut content = textareas.content().to_owned();
+    content.set_block(Block::bordered().title("Task name:"));
     frame.render_widget(
-        content_input,
+        &content,
         *chunks
             .first()
             .expect("first element of chunks should exist"),
     );
-    let desc_input = Paragraph::new(buffer).block(Block::bordered().title("Description:"));
+    let mut desc = textareas.desc().to_owned();
+    desc.set_block(Block::bordered().title("Description:"));
     frame.render_widget(
-        desc_input,
+        &desc,
         *chunks
             .get(1)
             .expect("second element of chunks should exist"),
