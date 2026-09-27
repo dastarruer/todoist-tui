@@ -37,7 +37,7 @@ async fn bootstrap_app() -> color_eyre::Result<App> {
         .log_to_file(
             FileSpec::default()
                 .directory(log_dir)
-                .basename("gtkshutdown"),
+                .basename("todoist-tui"),
         )
         .duplicate_to_stdout(flexi_logger::Duplicate::Trace)
         .rotate(
