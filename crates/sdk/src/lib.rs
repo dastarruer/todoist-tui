@@ -14,6 +14,7 @@ use reqwest::{Client, Url};
 use serde::{Deserialize, Deserializer, Serialize};
 use uuid::Uuid;
 
+#[derive(Debug, Default, Clone)]
 pub struct APIClient {
     pub key: String,
     pub sync_key: SyncKey,
