@@ -83,7 +83,7 @@ impl AddTaskTextAreas {
         &self.textareas[1]
     }
 
-    pub const fn _cycle_focus(&mut self) {
+    pub const fn cycle_focus(&mut self) {
         self.focused = match self.focused {
             0 => 1,
             1 => 0,

@@ -4,6 +4,7 @@ mod ui;
 use std::{env::var, io::Stdout, path::PathBuf};
 
 use color_eyre::eyre::Context;
+use crossterm::event::KeyModifiers;
 use flexi_logger::{FileSpec, Logger};
 use ratatui::crossterm::event::{self, Event, KeyCode};
 use ratatui::{Terminal, backend::CrosstermBackend};
@@ -72,6 +73,9 @@ fn run_app(
                 },
                 ViewState::AddTask(textareas) => match key.code {
                     KeyCode::Esc => app.cancel_adding_task(),
+                    KeyCode::Char('x') if key.modifiers == KeyModifiers::CONTROL => {
+                        textareas.cycle_focus();
+                    }
                     _ => {
                         let () = textareas.handle_key(key);
                     }
