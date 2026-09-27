@@ -9,7 +9,10 @@ use flexi_logger::{FileSpec, Logger};
 use ratatui::{Terminal, backend::CrosstermBackend};
 use todoist_sdk::APIClient;
 
-use crate::{app::App, ui::ui};
+use crate::{
+    app::{App, ViewState},
+    ui::ui,
+};
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
@@ -59,11 +62,20 @@ fn run_app(
     loop {
         terminal.draw(|f| ui(f, app))?;
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => return Ok(true),
-                KeyCode::Char('k') => app.move_up(),
-                KeyCode::Char('j') => app.move_down(),
-                _ => {}
+            match &mut app.view {
+                ViewState::List => match key.code {
+                    KeyCode::Char('q') => return Ok(true),
+                    KeyCode::Char('k') => app.move_up(),
+                    KeyCode::Char('j') => app.move_down(),
+                    KeyCode::Char('a') => app.start_adding_task(),
+                    _ => {}
+                },
+                #[allow(clippy::single_match)]
+                #[allow(unused_variables)]
+                ViewState::AddTask { buffer } => match key.code {
+                    KeyCode::Esc => app.cancel_adding_task(),
+                    _ => {}
+                },
             }
         }
     }

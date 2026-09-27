@@ -3,6 +3,7 @@ use todoist_sdk::{APIClient, ResourceType, types::task::Task};
 pub struct App {
     _client: APIClient,
     pub tasks: Vec<Task>,
+    pub view: ViewState,
     highlighted_task_index: usize,
 }
 
@@ -16,6 +17,7 @@ impl App {
         Ok(Self {
             _client: client,
             tasks,
+            view: ViewState::List,
             highlighted_task_index: 0,
         })
     }
@@ -34,4 +36,20 @@ impl App {
             .saturating_add(1)
             .min(self.tasks.len().saturating_sub(1));
     }
+
+    pub fn start_adding_task(&mut self) {
+        self.view = ViewState::AddTask {
+            buffer: String::new(),
+        };
+    }
+
+    pub fn cancel_adding_task(&mut self) {
+        self.view = ViewState::List;
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ViewState {
+    List,
+    AddTask { buffer: String },
 }

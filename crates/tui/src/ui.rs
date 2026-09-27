@@ -1,28 +1,32 @@
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style, Stylize},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Row, Table},
+    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Row, Table},
 };
 
-use crate::app::App;
+use crate::app::{App, ViewState};
 
 pub fn ui(frame: &mut Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(95), Constraint::Max(10)])
         .split(frame.area());
+    let footer_area = *chunks
+        .get(1)
+        .expect("second element of chunks should exist");
+    let view_area = *chunks
+        .first()
+        .expect("first element of chunks should exist");
 
     // Sidebar and tasks
     let view = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Min(30), Constraint::Percentage(100)])
-        .split(
-            *chunks
-                .first()
-                .expect("first element of chunks should exist"),
-        );
+        .split(view_area);
+    let sidebar_area = *view.first().expect("second element of view should exist");
+    let tasks_area = *view.get(1).expect("second element of view should exist");
 
     let mut task_rows = Vec::<Row>::new();
     let highlighted_task = app.highlighted_task();
@@ -41,25 +45,49 @@ pub fn ui(frame: &mut Frame, app: &App) {
     }
     let tasks_table = Table::new(task_rows, [Constraint::Fill(1)])
         .block(Block::new().borders(Borders::LEFT | Borders::BOTTOM));
-    frame.render_widget(
-        tasks_table,
-        *view.get(1).expect("second element of view should exist"),
-    );
+    frame.render_widget(tasks_table, tasks_area);
 
     let sidebar = List::new(Vec::<ListItem>::new())
         .block(Block::default().borders(Borders::RIGHT | Borders::BOTTOM));
-    frame.render_widget(
-        sidebar,
-        *view.first().expect("first element of view should exist"),
-    );
+    frame.render_widget(sidebar, sidebar_area);
 
     // Keybind hints
-    let footer = *chunks
-        .get(1)
-        .expect("second element of chunks should exist");
     let hints = Paragraph::new(Line::from(vec![
         Span::from("<j/k> ").blue(),
         Span::from("move "),
+        Span::from("<a> ").blue(),
+        Span::from("add task "),
     ]));
-    frame.render_widget(hints, footer);
+    frame.render_widget(hints, footer_area);
+
+    if let ViewState::AddTask { buffer } = &app.view {
+        render_add_task_popup(frame, tasks_area, buffer);
+    }
+}
+
+// https://ratatui.rs/recipes/layout/center-a-widget/#popups
+fn render_add_task_popup(frame: &mut Frame, area: Rect, buffer: &str) {
+    let area = area.centered(Constraint::Max(50), Constraint::Max(10));
+    let popup = Block::bordered();
+    frame.render_widget(Clear, area);
+    frame.render_widget(&popup, area);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
+        .split(popup.inner(area));
+    let content_input = Paragraph::new(buffer).block(Block::bordered().title("Task name:"));
+    frame.render_widget(
+        content_input,
+        *chunks
+            .first()
+            .expect("first element of chunks should exist"),
+    );
+    let desc_input = Paragraph::new(buffer).block(Block::bordered().title("Description:"));
+    frame.render_widget(
+        desc_input,
+        *chunks
+            .get(1)
+            .expect("second element of chunks should exist"),
+    );
 }
