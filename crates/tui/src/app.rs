@@ -63,16 +63,8 @@ pub struct AddTaskTextAreas {
 }
 
 impl AddTaskTextAreas {
-    pub fn _focused_textarea(&self) -> &TextArea<'static> {
-        self.textareas
-            .get(self.focused)
-            .expect("focused textarea should exist")
-    }
-
-    pub fn _focused_textarea_mut(&mut self) -> &mut TextArea<'static> {
-        self.textareas
-            .get_mut(self.focused)
-            .expect("focused textarea should exist")
+    pub const fn is_focused(&self, index: usize) -> bool {
+        self.focused == index
     }
 
     pub const fn content(&self) -> &TextArea<'static> {

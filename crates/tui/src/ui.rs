@@ -1,10 +1,11 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style, Stylize},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Row, Table},
 };
+use ratatui_textarea::TextArea;
 
 use crate::app::{AddTaskTextAreas, App, ViewState};
 
@@ -76,20 +77,52 @@ fn render_add_task_popup(frame: &mut Frame, area: Rect, textareas: &AddTaskTextA
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
         .split(popup.inner(area));
+
     let mut content = textareas.content().to_owned();
-    content.set_block(Block::bordered().title("Task name:"));
+    if textareas.is_focused(0) {
+        activate(&mut content, "Task name:");
+    } else {
+        inactivate(&mut content, "Task name:");
+    }
     frame.render_widget(
         &content,
         *chunks
             .first()
             .expect("first element of chunks should exist"),
     );
+
     let mut desc = textareas.desc().to_owned();
-    desc.set_block(Block::bordered().title("Description:"));
+    if textareas.is_focused(1) {
+        activate(&mut desc, "Description:");
+    } else {
+        inactivate(&mut desc, "Description");
+    }
     frame.render_widget(
         &desc,
         *chunks
             .get(1)
             .expect("second element of chunks should exist"),
+    );
+}
+
+fn inactivate<'a>(textarea: &mut TextArea<'a>, block_title: &'a str) {
+    textarea.set_cursor_line_style(Style::default());
+    textarea.set_cursor_style(Style::default());
+    textarea.set_block(
+        Block::default()
+            .borders(Borders::ALL)
+            .style(Style::default().fg(Color::DarkGray))
+            .title(format!(" {block_title} (^X to switch) ")),
+    );
+}
+
+fn activate<'a>(textarea: &mut TextArea<'a>, block_title: &'a str) {
+    textarea.set_cursor_line_style(Style::default());
+    textarea.set_cursor_style(Style::default().add_modifier(Modifier::REVERSED));
+    textarea.set_block(
+        Block::default()
+            .borders(Borders::ALL)
+            .style(Style::default())
+            .title(block_title),
     );
 }
