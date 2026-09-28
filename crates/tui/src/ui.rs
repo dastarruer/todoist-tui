@@ -62,7 +62,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
     frame.render_widget(hints, footer_area);
 
     if let ViewState::AddTask(textareas) = &app.view {
-        render_add_task_popup(frame, tasks_area, textareas);
+        render_add_task_popup(frame, frame.area(), textareas);
     }
 }
 
