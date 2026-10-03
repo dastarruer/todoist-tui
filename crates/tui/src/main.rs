@@ -41,7 +41,6 @@ async fn bootstrap_app() -> color_eyre::Result<App<'static>> {
                 .directory(log_dir)
                 .basename("todoist-tui"),
         )
-        .duplicate_to_stdout(flexi_logger::Duplicate::Trace)
         .rotate(
             flexi_logger::Criterion::Size(1_000_000),
             flexi_logger::Naming::Numbers,
