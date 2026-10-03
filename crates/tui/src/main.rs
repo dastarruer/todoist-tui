@@ -1,19 +1,17 @@
+mod action;
 mod app;
-mod ui;
+mod components;
 
 use std::{env::var, io::Stdout, path::PathBuf};
 
 use color_eyre::eyre::Context;
-use crossterm::event::KeyModifiers;
 use flexi_logger::{FileSpec, Logger};
-use ratatui::crossterm::event::{self, Event, KeyCode};
+use ratatui::crossterm::event::{self, Event};
 use ratatui::{Terminal, backend::CrosstermBackend};
 use todoist_sdk::APIClient;
 
-use crate::{
-    app::{App, ViewState},
-    ui::ui,
-};
+use crate::app::App;
+use crate::components::Component;
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
@@ -25,7 +23,7 @@ async fn main() -> color_eyre::Result<()> {
     Ok(())
 }
 
-async fn bootstrap_app() -> color_eyre::Result<App> {
+async fn bootstrap_app() -> color_eyre::Result<App<'static>> {
     color_eyre::install()?;
     let log_dir = std::env::var("XDG_STATE_HOME")
         .map_or_else(
@@ -60,29 +58,13 @@ fn run_app(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     mut app: App,
 ) -> color_eyre::Result<bool> {
-    loop {
-        terminal.draw(|f| ui(f, &app))?;
-        if let Event::Key(key) = event::read()? {
-            match &mut app.view {
-                ViewState::List => match key.code {
-                    KeyCode::Char('q') => return Ok(true),
-                    KeyCode::Char('k') => app.move_up(),
-                    KeyCode::Char('j') => app.move_down(),
-                    KeyCode::Char('a') => app.start_adding_task(),
-                    _ => {}
-                },
-                ViewState::AddTask(textareas) => match key.code {
-                    KeyCode::Esc => app.cancel_adding_task(),
-                    KeyCode::Char('x') if key.modifiers == KeyModifiers::CONTROL => {
-                        textareas.cycle_focus();
-                    }
-                    _ => {
-                        let () = textareas.handle_key(key);
-                    }
-                },
-            }
+    while !app.should_quit {
+        terminal.draw(|f| app.draw(f, f.area()))?;
+        if let Event::Key(event) = event::read()? {
+            app.tick(event);
         }
     }
+    Ok(true)
 }
 
 fn retrieve_api_key() -> color_eyre::Result<String> {
