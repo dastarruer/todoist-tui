@@ -8,7 +8,7 @@ use serde_with::skip_serializing_none;
 use crate::{
     command::CommandArgs,
     types::{
-        Id, Uid,
+        Id, Priority, Uid,
         task::{Deadline, DueDate, TaskDuration},
     },
 };
@@ -32,13 +32,8 @@ pub struct AddTask {
     pub due: Option<DueDate>,
     /// The deadline of the task.
     pub deadline: Option<Deadline>,
-    /// The priority of the task (a number between `1` and
-    /// `4`, `4` for very urgent and `1` for natural).
-    ///
-    /// **Note:** Keep in mind that very urgent is the
-    /// priority `1` on clients. So, `p1` will return `4` in
-    /// the API.
-    pub priority: Option<u8>,
+    /// The priority of the task.
+    pub priority: Option<Priority>,
     /// The ID of the parent task. Set to `None` for root tasks.
     pub parent_id: Option<String>,
     /// The order of task. Defines the position of the task among all the tasks
@@ -113,13 +108,8 @@ pub struct UpdateTask {
     pub due: Option<DueDate>,
     /// The deadline of the task.
     pub deadline: Option<Deadline>,
-    /// The priority of the task (a number between `1` and
-    /// `4`, `4` for very urgent and `1` for natural).
-    ///
-    /// **Note:** Keep in mind that very urgent is the
-    /// priority `1` on clients. So, `p1` will return `4` in
-    /// the API.
-    pub priority: Option<u8>,
+    /// The priority of the task.
+    pub priority: Option<Priority>,
     /// Whether the task's sub-tasks are collapsed.
     pub is_collapsed: Option<bool>,
     /// The task's labels (a list of names that may represent either personal

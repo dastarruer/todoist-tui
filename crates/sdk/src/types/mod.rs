@@ -2,10 +2,38 @@ pub mod project;
 pub mod task;
 
 use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use uuid::Uuid;
 
-#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// The priority of a task.
+#[derive(
+    Deserialize_repr, Serialize_repr, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
+#[repr(u8)]
+pub enum Priority {
+    // Priority numbers are backwards for reasons: https://developer.todoist.com/api/v1/#tag/Sync/Tasks/Update-a-task
+    P1 = 4,
+    P2 = 3,
+    P3 = 2,
+    #[default]
+    NoPriority = 1,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Id(pub String);
+
+impl Id {
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4().to_string())
+    }
+}
+
+impl Default for Id {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl From<Uuid> for Id {
     fn from(value: Uuid) -> Self {
@@ -25,8 +53,21 @@ impl From<&str> for Id {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Uid(pub String);
+
+impl Uid {
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4().to_string())
+    }
+}
+
+impl Default for Uid {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// Represents a Todoist color option.
 ///

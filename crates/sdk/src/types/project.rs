@@ -1,12 +1,16 @@
+use bon::Builder;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::types::{Color, Id};
 
-#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Builder,
+)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Project {
     /// The ID of the project.
+    #[builder(default)]
     pub id: Id,
     /// The name of the project.
     pub name: String,
@@ -20,10 +24,12 @@ pub struct Project {
     /// teams.
     pub is_invite_only: Option<bool>,
     /// The status of the project. Only used for teams.
+    #[builder(default)]
     pub status: ProjectStatus,
     /// If `false`, the project is invite-only and people can't join by link.
     /// If true, the project is visible to anyone with a link, and anyone can
     /// join it. Only used for teams.
+    #[builder(default)]
     pub is_link_sharing_enabled: bool,
     /// The default role a user can have. Only used for teams.
     pub collaborator_role_default: Option<Role>,
@@ -33,6 +39,7 @@ pub struct Project {
     /// projects.
     pub parent_id: Option<Id>,
     /// The order of the project. Defines the position of the project among all the projects with the same `parent_id`
+    #[builder(default)]
     pub child_order: i32,
     /// Project's fractional-indexing order key: personal projects sort by
     /// comparing keys lexicographically among siblings with the same
@@ -40,30 +47,41 @@ pub struct Project {
     /// `None` for workspace projects (ordered via folders instead).
     pub order_key: Option<String>,
     /// Whether the project's sub-projects are collapsed.
+    #[builder(default)]
     pub is_collapsed: bool,
     /// Whether the project is shared.
+    #[builder(default)]
     pub shared: bool,
     /// Whether tasks in the project can be assigned to users.
+    #[builder(default)]
     pub can_assign_tasks: bool,
     /// Whether the project is marked as deleted.
+    #[builder(default)]
     pub is_deleted: bool,
     /// Whether the project is marked as archived.
+    #[builder(default)]
     pub is_archived: bool,
     /// Whether the project is a favorite.
+    #[builder(default)]
     pub is_favorite: bool,
     /// Whether the project is from a canceled subscription.
+    #[builder(default)]
     pub is_frozen: bool,
     /// The mode in which to render tasks in this project.
+    #[builder(default)]
     pub view_style: ViewStyle,
     /// The role of the requesting user. Only used for teams.
     pub role: Role,
     /// Whether the project is `Inbox`.
+    #[builder(default)]
     pub inbox_project: bool,
     /// The ID of the folder which this project is in.
     pub folder_id: Option<Id>,
     /// Date at which project was created.
+    #[builder(default = Utc::now())]
     pub created_at: DateTime<Utc>,
     /// Date at which project was last updated.
+    #[builder(default = Utc::now())]
     pub updated_at: DateTime<Utc>,
     /// If `true`, default collaborators are still being added to the project
     /// in the background. Only used for teams.
