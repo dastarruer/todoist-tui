@@ -1,6 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
-    layout::Constraint,
+    Frame,
+    layout::{Constraint, Rect},
     style::{Color, Style},
     widgets::{Block, Borders, Row, Table},
 };
@@ -23,6 +24,7 @@ impl TaskList {
     }
 
     fn highlighted_task(&self) -> Option<&Task> {
+        // `.get()` here is more convenient
         self.tasks.get(self.highlighted_task_index)
     }
 
@@ -39,7 +41,7 @@ impl TaskList {
 }
 
 impl Component for TaskList {
-    fn draw(&self, frame: &mut ratatui::prelude::Frame, area: ratatui::prelude::Rect) {
+    fn draw(&self, frame: &mut Frame, area: Rect) {
         let mut task_rows = Vec::<Row>::new();
         let highlighted_task = self.highlighted_task();
         for task in &self.tasks {

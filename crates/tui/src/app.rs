@@ -80,28 +80,25 @@ impl Component for App<'_> {
         }
     }
 
+    #[allow(clippy::indexing_slicing)]
     fn draw(&self, frame: &mut Frame, area: Rect) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(95), Constraint::Max(10)])
             .split(area);
-        let footer_area = *chunks
-            .get(1)
-            .expect("second element of chunks should exist");
-        let view_area = *chunks
-            .first()
-            .expect("first element of chunks should exist");
+        let footer_area = chunks[1];
+        let view_area = chunks[0];
 
         // Sidebar and tasks
         let view = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Min(30), Constraint::Percentage(100)])
             .split(view_area);
+        let sidebar_area = view[0];
+        let tasks_area = view[1];
 
-        let tasks_area = *view.get(1).expect("second element of view should exist");
         self.task_list.draw(frame, tasks_area);
 
-        let sidebar_area = *view.first().expect("second element of view should exist");
         let sidebar = List::new(Vec::<ListItem>::new())
             .block(Block::default().borders(Borders::RIGHT | Borders::BOTTOM));
         frame.render_widget(sidebar, sidebar_area);

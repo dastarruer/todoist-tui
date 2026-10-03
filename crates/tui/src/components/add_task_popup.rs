@@ -44,6 +44,7 @@ impl<'a> AddTaskPopup<'a> {
 }
 
 impl Component for AddTaskPopup<'_> {
+    #[allow(clippy::indexing_slicing)]
     fn draw(&self, frame: &mut Frame, area: Rect) {
         let area = area.centered(Constraint::Max(50), Constraint::Max(10));
         let popup = Block::bordered();
@@ -54,6 +55,8 @@ impl Component for AddTaskPopup<'_> {
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
             .split(popup.inner(area));
+        let content_area = chunks[0];
+        let desc_area = chunks[1];
 
         let mut content = self.content().to_owned();
         if self.is_focused(0) {
@@ -61,12 +64,7 @@ impl Component for AddTaskPopup<'_> {
         } else {
             inactivate(&mut content, "Task name");
         }
-        frame.render_widget(
-            &content,
-            *chunks
-                .first()
-                .expect("first element of chunks should exist"),
-        );
+        frame.render_widget(&content, content_area);
 
         let mut desc = self.desc().to_owned();
         if self.is_focused(1) {
@@ -74,12 +72,7 @@ impl Component for AddTaskPopup<'_> {
         } else {
             inactivate(&mut desc, "Description");
         }
-        frame.render_widget(
-            &desc,
-            *chunks
-                .get(1)
-                .expect("second element of chunks should exist"),
-        );
+        frame.render_widget(&desc, desc_area);
     }
 
     fn handle_key(&mut self, event: KeyEvent) -> Option<Action> {
@@ -90,10 +83,8 @@ impl Component for AddTaskPopup<'_> {
             }
             KeyCode::Esc => Some(Action::CloseAddTaskModal),
             _ => {
-                self.textareas
-                    .get_mut(self.focused_index)
-                    .expect("focused textarea should exist")
-                    .input(event);
+                #[allow(clippy::indexing_slicing)]
+                self.textareas[self.focused_index].input(event);
                 None
             }
         }
