@@ -3,5 +3,6 @@ pub enum Action {
     Quit,
     OpenAddTaskModal,
     CloseAddTaskModal,
+    CompleteTask,
     AddTask,
 }

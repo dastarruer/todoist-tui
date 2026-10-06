@@ -5,7 +5,7 @@ use ratatui::{
     style::{Color, Style},
     widgets::{Block, Borders, Row, Table},
 };
-use todoist_sdk::types::task::Task;
+use todoist_sdk::types::{Id, task::Task};
 
 use crate::{action::Action, components::Component};
 
@@ -27,7 +27,11 @@ impl TaskList {
         self.tasks.push(task);
     }
 
-    fn highlighted_task(&self) -> Option<&Task> {
+    pub fn remove_task(&mut self, id: &Id) {
+        self.tasks = self.tasks.iter().filter(|t| &t.id != id).cloned().collect();
+    }
+
+    pub fn focused_task(&self) -> Option<&Task> {
         // `.get()` here is more convenient
         self.tasks.get(self.highlighted_task_index)
     }
@@ -47,7 +51,7 @@ impl TaskList {
 impl Component for TaskList {
     fn draw(&self, frame: &mut Frame, area: Rect) {
         let mut task_rows = Vec::<Row>::new();
-        let highlighted_task = self.highlighted_task();
+        let highlighted_task = self.focused_task();
         for task in &self.tasks {
             let bg_color = if let Some(highlighted_task) = highlighted_task
                 && task == highlighted_task
@@ -76,6 +80,7 @@ impl Component for TaskList {
                 self.scroll_down();
                 None
             }
+            KeyCode::Enter => Some(Action::CompleteTask),
             _ => None,
         }
     }

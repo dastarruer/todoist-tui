@@ -9,7 +9,10 @@ use ratatui::{
 };
 use todoist_sdk::{
     APIClient, ResourceType,
-    command::{Command, CommandArgs, task::AddTask},
+    command::{
+        Command, CommandArgs,
+        task::{AddTask, CompleteTask},
+    },
     types::{Id, Uid, task::Task},
 };
 
@@ -66,6 +69,11 @@ impl App<'_> {
         match self.handle_key(event) {
             Some(Action::OpenAddTaskModal) => self.start_adding_task(),
             Some(Action::CloseAddTaskModal) => self.cancel_adding_task(),
+            Some(Action::CompleteTask) => {
+                if let Some(task) = self.task_list.focused_task() {
+                    self.complete_task(task.clone()).await?;
+                }
+            }
             Some(Action::AddTask) => {
                 self.add_task(
                     self.add_task_popup
@@ -109,6 +117,15 @@ impl App<'_> {
         log::debug!("add task resp: {resp:#?}");
 
         self.cancel_adding_task();
+        Ok(())
+    }
+
+    async fn complete_task(&mut self, task: Task) -> color_eyre::Result<()> {
+        self.task_list.remove_task(&task.id);
+        let cmd = Command::<Box<dyn CommandArgs>>::new(Box::new(CompleteTask::from(task)));
+        let resp = self.client.send(&[cmd]).await?;
+        log::debug!("add task resp: {resp:#?}");
+
         Ok(())
     }
 
