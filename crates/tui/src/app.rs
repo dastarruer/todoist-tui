@@ -88,15 +88,11 @@ impl App<'_> {
             .project_id(Id::default()) // use a random id for now
             .user_id(Uid::default()) // use a random id for now
             .build();
-        self.task_list.add_task(task);
+        self.task_list.add_task(task.clone());
 
-        let cmd = Command::<Box<dyn CommandArgs>>::new(Box::new(
-            AddTask::builder()
-                .content(content)
-                .description(description)
-                .build(),
-        ));
-        let _ = self.client.send(&[cmd]).await?;
+        let cmd = Command::<Box<dyn CommandArgs>>::new(Box::new(AddTask::from(task)));
+        let resp = self.client.send(&[cmd]).await?;
+        log::debug!("add task resp: {resp:#?}");
 
         self.cancel_adding_task();
         Ok(())

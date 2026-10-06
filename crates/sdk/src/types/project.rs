@@ -96,7 +96,7 @@ pub struct Project {
     /// scope: workspace projects and folders sort by comparing keys
     /// lexicographically against each other. null for personal projects, and
     /// for workspace projects not yet migrated. Only used for teams.
-    default_order_key: Option<String>,
+    pub default_order_key: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
