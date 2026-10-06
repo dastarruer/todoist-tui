@@ -1,3 +1,4 @@
+use color_eyre::eyre::OptionExt;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
@@ -27,6 +28,8 @@ pub enum ViewState {
 pub struct App<'a> {
     pub view: ViewState,
     pub should_quit: bool,
+    inbox_id: Id,
+    user_id: Uid,
     client: APIClient,
     task_list: TaskList,
     add_task_popup: Option<AddTaskPopup<'a>>,
@@ -34,14 +37,25 @@ pub struct App<'a> {
 
 impl App<'_> {
     pub async fn new(mut client: APIClient) -> color_eyre::Result<Self> {
-        let tasks = client
-            .sync(vec![ResourceType::Items])
-            .await?
-            .items
-            .expect("`items` should exist");
+        let resp = client
+            .sync(vec![ResourceType::Items, ResourceType::Projects])
+            .await?;
+        let tasks = resp.items.unwrap_or_default();
+        // TODO: Add command to retrieve user data
+        let user_id = tasks.first().ok_or_eyre("no tasks exist; this app currently requires some tasks to exist in order to determine the user ID because im lazy")?.user_id.clone();
+
+        let projects = resp.projects.unwrap_or_default();
+        let inbox_id = projects
+            .iter()
+            .find(|p| p.inbox_project)
+            .expect("Inbox project should exist")
+            .id
+            .clone();
         Ok(Self {
             view: ViewState::List,
             should_quit: false,
+            inbox_id,
+            user_id,
             client,
             task_list: TaskList::new(tasks),
             add_task_popup: None,
@@ -85,8 +99,8 @@ impl App<'_> {
         let task = Task::builder()
             .content(content.clone())
             .description(description.clone())
-            .project_id(Id::default()) // use a random id for now
-            .user_id(Uid::default()) // use a random id for now
+            .project_id(self.inbox_id.clone())
+            .user_id(self.user_id.clone())
             .build();
         self.task_list.add_task(task.clone());
 
