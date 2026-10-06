@@ -9,7 +9,7 @@ use crate::{
     command::CommandArgs,
     types::{
         Id, Priority, Uid,
-        task::{Deadline, DueDate, TaskDuration},
+        task::{Deadline, DueDate, Task, TaskDuration},
     },
 };
 
@@ -27,7 +27,7 @@ pub struct AddTask {
     pub description: Option<String>,
     /// The ID of the project to add the task to (a number or a temp id). By
     /// default the task is added to the user’s `Inbox` project.
-    pub project_id: Option<Id>,
+    pub project_id: Id,
     /// The due date of the task.
     pub due: Option<DueDate>,
     /// The deadline of the task.
@@ -83,6 +83,58 @@ impl CommandArgs for AddTask {
     }
     fn creates_resource(&self) -> bool {
         true
+    }
+}
+
+impl From<Task> for AddTask {
+    fn from(task: Task) -> Self {
+        let Task {
+            project_id,
+            content,
+            description,
+            due,
+            deadline,
+            priority,
+            parent_id,
+            section_id,
+            is_collapsed,
+            labels,
+            assigned_by_uid,
+            responsible_uid,
+            duration,
+            id: _,
+            user_id: _,
+            child_order: _,
+            order_key: _,
+            day_order: _,
+            added_by_uid: _,
+            checked: _,
+            is_deleted: _,
+            completed_at: _,
+            added_at: _,
+            updated_at: _,
+        } = task;
+
+        Self {
+            content,
+            description: Some(description).filter(|d| !d.is_empty()),
+            project_id,
+            due,
+            deadline,
+            priority: Some(priority),
+            parent_id: parent_id.map(|id| id.0),
+            child_order: None, // omitted so the backend places it at the bottom
+            order_key: None,
+            section_id,
+            day_order: None,
+            is_collapsed: Some(is_collapsed),
+            labels: Some(labels).filter(|l| !l.is_empty()),
+            assigned_by_uid,
+            responsible_uid,
+            auto_reminder: None,
+            auto_parse_labels: None,
+            duration,
+        }
     }
 }
 
@@ -147,6 +199,53 @@ impl CommandArgs for UpdateTask {
     }
 }
 
+impl From<Task> for UpdateTask {
+    fn from(task: Task) -> Self {
+        let Task {
+            id,
+            content,
+            description,
+            due,
+            deadline,
+            priority,
+            is_collapsed,
+            labels,
+            assigned_by_uid,
+            responsible_uid,
+            duration,
+            user_id: _,
+            project_id: _,
+            parent_id: _,
+            child_order: _,
+            order_key: _,
+            section_id: _,
+            day_order: _,
+            added_by_uid: _,
+            checked: _,
+            is_deleted: _,
+            completed_at: _,
+            added_at: _,
+            updated_at: _,
+        } = task;
+
+        Self {
+            id,
+            content: Some(content),
+            description: Some(description), // empty string clears it
+            due,
+            deadline,
+            priority: Some(priority),
+            is_collapsed: Some(is_collapsed),
+            labels: Some(labels),
+            assigned_by_uid: assigned_by_uid.map(Some), // None would reset to your UID
+            responsible_uid: Some(responsible_uid),     // Some(None) serializes as null: unsets
+            day_order: None,
+            duration,
+            order_key: None,
+        }
+    }
+}
+
 /// Move task to a different location.
 ///
 /// Only one of `parent_id`, `section_id` or `project_id` must be set.
@@ -165,7 +264,7 @@ pub struct MoveTask {
     pub section_id: Option<Id>,
     /// ID of the destination project. The task becomes the last root task of
     /// the project.
-    pub project_id: Option<Id>,
+    pub project_id: Id,
 }
 
 impl CommandArgs for MoveTask {
@@ -219,6 +318,16 @@ impl CommandArgs for CompleteTask {
     }
     fn creates_resource(&self) -> bool {
         false
+    }
+}
+
+impl From<Task> for CompleteTask {
+    fn from(task: Task) -> Self {
+        Self {
+            id: task.id,
+            date_completed: task.completed_at,
+            from_undo: None,
+        }
     }
 }
 
@@ -279,6 +388,17 @@ impl CommandArgs for CompleteRecurringTask {
     }
 }
 
+impl From<Task> for CompleteRecurringTask {
+    fn from(task: Task) -> Self {
+        Self {
+            id: task.id,
+            due: task.due, // should already hold the *next* occurrence
+            is_forward: None,
+            reset_subtasks: None,
+        }
+    }
+}
+
 /// A simplified version of `CompleteTask` / `CompleteRecurringTask`.
 ///
 /// The command does exactly what official clients do when you close a task:
@@ -315,6 +435,14 @@ pub struct UpdateTaskDayOrders {
     pub ids_to_orders: HashMap<Id, i32>,
 }
 
+impl From<Task> for UpdateTaskDayOrders {
+    fn from(task: Task) -> Self {
+        Self {
+            ids_to_orders: HashMap::from([(task.id, task.day_order)]),
+        }
+    }
+}
+
 impl CommandArgs for UpdateTaskDayOrders {
     fn command_type(&self) -> &'static str {
         "item_update_day_orders"
@@ -323,6 +451,18 @@ impl CommandArgs for UpdateTaskDayOrders {
         false
     }
 }
+
+macro_rules! impl_from_task_id_only {
+    ($($ty:ty),* $(,)?) => {$(
+        impl From<Task> for $ty {
+            fn from(task: Task) -> Self {
+                Self { id: task.id }
+            }
+        }
+    )*};
+}
+
+impl_from_task_id_only!(DeleteTask, UncompleteTask, CloseTask);
 
 #[cfg(test)]
 mod tests {
