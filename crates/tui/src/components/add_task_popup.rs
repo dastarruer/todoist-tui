@@ -2,6 +2,8 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
+    style::Stylize,
+    text::Span,
     widgets::{Block, Clear},
 };
 use ratatui_textarea::TextArea;
@@ -22,15 +24,23 @@ impl<'a> AddTaskPopup<'a> {
         Self::default()
     }
 
+    pub fn content(&self) -> String {
+        self.content_textarea().lines().join("\n")
+    }
+
+    pub fn desc(&self) -> Option<String> {
+        Some(self.desc_textarea().lines().join("\n")).filter(|d| !d.is_empty())
+    }
+
     const fn is_focused(&self, index: usize) -> bool {
         self.focused_index == index
     }
 
-    const fn content(&self) -> &TextArea<'a> {
+    const fn content_textarea(&self) -> &TextArea<'a> {
         &self.textareas[0]
     }
 
-    const fn desc(&self) -> &TextArea<'a> {
+    const fn desc_textarea(&self) -> &TextArea<'a> {
         &self.textareas[1]
     }
 
@@ -47,7 +57,10 @@ impl Component for AddTaskPopup<'_> {
     #[allow(clippy::indexing_slicing)]
     fn draw(&self, frame: &mut Frame, area: Rect) {
         let area = area.centered(Constraint::Max(50), Constraint::Max(10));
-        let popup = Block::bordered();
+        let popup = Block::bordered().title_bottom(vec![
+            Span::from("<alt + enter> ").blue(),
+            Span::from("add task"),
+        ]);
         frame.render_widget(Clear, area);
         frame.render_widget(&popup, area);
 
@@ -58,7 +71,7 @@ impl Component for AddTaskPopup<'_> {
         let content_area = chunks[0];
         let desc_area = chunks[1];
 
-        let mut content = self.content().to_owned();
+        let mut content = self.content_textarea().to_owned();
         if self.is_focused(0) {
             activate(&mut content, "Task name");
         } else {
@@ -66,7 +79,7 @@ impl Component for AddTaskPopup<'_> {
         }
         frame.render_widget(&content, content_area);
 
-        let mut desc = self.desc().to_owned();
+        let mut desc = self.desc_textarea().to_owned();
         if self.is_focused(1) {
             activate(&mut desc, "Description");
         } else {
@@ -82,6 +95,7 @@ impl Component for AddTaskPopup<'_> {
                 None
             }
             KeyCode::Esc => Some(Action::CloseAddTaskModal),
+            KeyCode::Enter if event.modifiers.contains(KeyModifiers::ALT) => Some(Action::AddTask),
             _ => {
                 #[allow(clippy::indexing_slicing)]
                 self.textareas[self.focused_index].input(event);

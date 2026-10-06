@@ -107,7 +107,10 @@
           '';
 
           # Required by rust-analyzer
-          env.RUST_SRC_PATH = "${pkgs.rustToolchain}/lib/rustlib/src/rust/library";
+          env = {
+            RUST_LOG = "trace";
+            RUST_SRC_PATH = "${pkgs.rustToolchain}/lib/rustlib/src/rust/library";
+          };
         };
       }
     );

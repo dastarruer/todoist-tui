@@ -124,7 +124,7 @@ impl APIClient {
     /// [`SyncWriteOutput::errors`] for info on failed commands.
     pub async fn send(
         &mut self,
-        commands: &[Command<&dyn CommandArgs>],
+        commands: &[Command<Box<dyn CommandArgs>>],
     ) -> Result<SyncWriteOutput> {
         let commands = serde_json::to_string(commands)?;
         let data = [("commands", commands)];

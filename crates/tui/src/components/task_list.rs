@@ -23,6 +23,10 @@ impl TaskList {
         }
     }
 
+    pub fn add_task(&mut self, task: Task) {
+        self.tasks.push(task);
+    }
+
     fn highlighted_task(&self) -> Option<&Task> {
         // `.get()` here is more convenient
         self.tasks.get(self.highlighted_task_index)

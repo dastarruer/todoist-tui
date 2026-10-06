@@ -6,7 +6,11 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
-use todoist_sdk::{APIClient, ResourceType};
+use todoist_sdk::{
+    APIClient, ResourceType,
+    command::{Command, CommandArgs, task::AddTask},
+    types::{Id, Uid, task::Task},
+};
 
 use crate::{
     action::Action,
@@ -23,7 +27,7 @@ pub enum ViewState {
 pub struct App<'a> {
     pub view: ViewState,
     pub should_quit: bool,
-    _client: APIClient,
+    client: APIClient,
     task_list: TaskList,
     add_task_popup: Option<AddTaskPopup<'a>>,
 }
@@ -38,25 +42,64 @@ impl App<'_> {
         Ok(Self {
             view: ViewState::List,
             should_quit: false,
-            _client: client,
+            client,
             task_list: TaskList::new(tasks),
             add_task_popup: None,
         })
     }
 
-    /// Returns `true` when the app should quit.
-    pub fn tick(&mut self, event: KeyEvent) {
+    pub async fn tick(&mut self, event: KeyEvent) -> color_eyre::Result<()> {
         match self.handle_key(event) {
             Some(Action::OpenAddTaskModal) => self.start_adding_task(),
             Some(Action::CloseAddTaskModal) => self.cancel_adding_task(),
+            Some(Action::AddTask) => {
+                self.add_task(
+                    self.add_task_popup
+                        .as_ref()
+                        .expect("popup should exist")
+                        .content(),
+                    self.add_task_popup
+                        .as_ref()
+                        .expect("popup should exist")
+                        .desc(),
+                )
+                .await?;
+            }
             Some(Action::Quit) => self.should_quit = true,
             None => {}
         }
+        Ok(())
     }
 
     fn start_adding_task(&mut self) {
         self.view = ViewState::AddTask;
         self.add_task_popup = Some(AddTaskPopup::new());
+    }
+
+    async fn add_task(
+        &mut self,
+        content: String,
+        description: Option<String>,
+    ) -> color_eyre::Result<()> {
+        let description = description.unwrap_or_default();
+        let task = Task::builder()
+            .content(content.clone())
+            .description(description.clone())
+            .project_id(Id::default()) // use a random id for now
+            .user_id(Uid::default()) // use a random id for now
+            .build();
+        self.task_list.add_task(task);
+
+        let cmd = Command::<Box<dyn CommandArgs>>::new(Box::new(
+            AddTask::builder()
+                .content(content)
+                .description(description)
+                .build(),
+        ));
+        let _ = self.client.send(&[cmd]).await?;
+
+        self.cancel_adding_task();
+        Ok(())
     }
 
     fn cancel_adding_task(&mut self) {

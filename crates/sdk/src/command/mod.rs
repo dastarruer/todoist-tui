@@ -77,6 +77,15 @@ pub trait CommandArgs: erased_serde::Serialize + Send + Sync {
 
 serialize_trait_object!(CommandArgs);
 
+impl CommandArgs for Box<dyn CommandArgs> {
+    fn command_type(&self) -> &'static str {
+        (**self).command_type()
+    }
+    fn creates_resource(&self) -> bool {
+        (**self).creates_resource()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
