@@ -77,20 +77,37 @@ pub trait CommandArgs: erased_serde::Serialize + Send + Sync {
 
 serialize_trait_object!(CommandArgs);
 
+impl CommandArgs for Box<dyn CommandArgs> {
+    fn command_type(&self) -> &'static str {
+        (**self).command_type()
+    }
+    fn creates_resource(&self) -> bool {
+        (**self).creates_resource()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
 
-    use crate::command::{
-        project::MoveProject,
-        task::{AddTask, CloseTask, DeleteTask},
+    use crate::{
+        command::{
+            project::MoveProject,
+            task::{AddTask, CloseTask, DeleteTask},
+        },
+        types::Id,
     };
 
     use super::*;
 
     #[test]
     fn creating_command_attaches_a_temp_id() {
-        let cmd = Command::new(AddTask::builder().content("Buy Milk").build());
+        let cmd = Command::new(
+            AddTask::builder()
+                .content("Buy Milk")
+                .project_id(Id::new())
+                .build(),
+        );
         assert!(cmd.temp_id.is_some());
     }
 
@@ -112,7 +129,12 @@ mod tests {
 
     #[test]
     fn temp_id_is_present_in_json_when_set() {
-        let cmd = Command::new(AddTask::builder().content(String::from("Buy Milk")).build());
+        let cmd = Command::new(
+            AddTask::builder()
+                .content(String::from("Buy Milk"))
+                .project_id(Id::new())
+                .build(),
+        );
         let value = serde_json::to_value(&cmd).unwrap();
         assert!(value.get("temp_id").is_some());
     }

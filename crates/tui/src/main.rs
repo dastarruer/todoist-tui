@@ -1,27 +1,29 @@
+mod action;
 mod app;
-mod ui;
+mod components;
 
 use std::{env::var, io::Stdout, path::PathBuf};
 
 use color_eyre::eyre::Context;
-use crossterm::event::{self, Event, KeyCode};
-use flexi_logger::{FileSpec, Logger};
+use flexi_logger::{FileSpec, Logger, LoggerHandle};
+use ratatui::crossterm::event::{self, Event};
 use ratatui::{Terminal, backend::CrosstermBackend};
 use todoist_sdk::APIClient;
 
-use crate::{app::App, ui::ui};
+use crate::app::App;
+use crate::components::Component;
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
-    let app = bootstrap_app().await?;
+    let (app, _logger) = bootstrap_app().await?;
     let mut terminal = ratatui::init();
-    run_app(&mut terminal, &app)?;
+    run_app(&mut terminal, app).await?;
     ratatui::restore();
 
     Ok(())
 }
 
-async fn bootstrap_app() -> color_eyre::Result<App> {
+async fn bootstrap_app() -> color_eyre::Result<(App<'static>, LoggerHandle)> {
     color_eyre::install()?;
     let log_dir = std::env::var("XDG_STATE_HOME")
         .map_or_else(
@@ -32,40 +34,36 @@ async fn bootstrap_app() -> color_eyre::Result<App> {
             PathBuf::from,
         )
         .join("todoist-tui");
-    let _logger = Logger::try_with_env()
+    let logger = Logger::try_with_env()
         .expect("Value of RUST_LOG is malformed")
         .log_to_file(
             FileSpec::default()
                 .directory(log_dir)
                 .basename("todoist-tui"),
         )
-        .duplicate_to_stdout(flexi_logger::Duplicate::Trace)
         .rotate(
             flexi_logger::Criterion::Size(1_000_000),
             flexi_logger::Naming::Numbers,
             flexi_logger::Cleanup::KeepLogFiles(5),
         )
-        .start();
+        .start()?;
 
     let key = retrieve_api_key().context("unable to retrieve API key")?;
     let client = APIClient::new(key);
-    App::new(client).await
+    Ok((App::new(client).await?, logger))
 }
 
-fn run_app(
+async fn run_app(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    app: &App,
+    mut app: App<'static>,
 ) -> color_eyre::Result<bool> {
-    loop {
-        terminal.draw(|f| ui(f, app))?;
-        // probably will need to add other keybinds in the future anyways
-        #[allow(clippy::collapsible_if)]
-        if let Event::Key(key) = event::read()? {
-            if key.code == KeyCode::Char('q') {
-                return Ok(true);
-            }
+    while !app.should_quit {
+        terminal.draw(|f| app.draw(f, f.area()))?;
+        if let Event::Key(event) = event::read()? {
+            app.tick(event).await?;
         }
     }
+    Ok(true)
 }
 
 fn retrieve_api_key() -> color_eyre::Result<String> {

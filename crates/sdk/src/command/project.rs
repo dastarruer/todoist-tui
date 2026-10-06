@@ -6,7 +6,7 @@ use crate::{
     command::CommandArgs,
     types::{
         Color, Id,
-        project::{ProjectAccess, ProjectStatus, Role, ViewStyle},
+        project::{Project, ProjectAccess, ProjectStatus, Role, ViewStyle},
     },
 };
 
@@ -39,7 +39,7 @@ pub struct AddProject {
     /// Determines the way the project is displayed within Todoist clients.
     pub view_style: Option<ViewStyle>,
     /// ID of the workspace the project should belong to.
-    pub workspace_id: Option<Id>,
+    pub workspace_id: Option<String>,
     /// Indicates if the project is invite-only or if it should be visible for everyone in the workspace. If left as `None`, the default value from the workspace `is_invite_only_default` will be used. Only used for teams.
     pub is_invite_only: Option<bool>,
     /// If `false`, the project is invite-only and people can't join by link. If `true`, the project is visible to anyone with a link, and anyone can join it. Only used for teams.
@@ -61,6 +61,65 @@ impl CommandArgs for AddProject {
     }
     fn creates_resource(&self) -> bool {
         true
+    }
+}
+
+impl From<Project> for AddProject {
+    fn from(project: Project) -> Self {
+        let Project {
+            name,
+            description,
+            workspace_id,
+            is_invite_only,
+            status,
+            is_link_sharing_enabled,
+            collaborator_role_default,
+            color,
+            parent_id,
+            is_favorite,
+            view_style,
+            folder_id,
+            access,
+            is_project_insights_enabled,
+            id: _,
+            child_order: _,
+            order_key: _,
+            is_collapsed: _,
+            shared: _,
+            can_assign_tasks: _,
+            is_deleted: _,
+            is_archived: _,
+            is_frozen: _,
+            role: _,
+            inbox_project: _,
+            created_at: _,
+            updated_at: _,
+            is_pending_default_collaborator_invites: _,
+            default_order_key: _,
+        } = project;
+
+        // `Project` stores plain values for team-only fields, so their defaults
+        // would otherwise be sent for personal projects too.
+        let is_team = workspace_id.is_none();
+
+        Self {
+            name,
+            description: Some(description).filter(|d| !d.is_empty()),
+            status: is_team.then_some(status),
+            color: Some(color),
+            parent_id,
+            folder_id: folder_id.map(|id| id.0),
+            child_order: None, // omitted so the backend places it at the bottom
+            order_key: None,
+            is_favorite: Some(is_favorite),
+            view_style: Some(view_style),
+            workspace_id,
+            is_invite_only,
+            is_link_sharing_enabled: is_team.then_some(is_link_sharing_enabled),
+            collaborator_role_default,
+            access: Some(access),
+            is_project_insights_enabled,
+        }
     }
 }
 
@@ -108,6 +167,61 @@ impl CommandArgs for UpdateProject {
     }
     fn creates_resource(&self) -> bool {
         false
+    }
+}
+
+impl From<Project> for UpdateProject {
+    fn from(project: Project) -> Self {
+        let Project {
+            id,
+            name,
+            description,
+            workspace_id,
+            status,
+            is_link_sharing_enabled,
+            collaborator_role_default,
+            color,
+            is_collapsed,
+            is_favorite,
+            view_style,
+            access,
+            is_project_insights_enabled,
+            is_invite_only: _,
+            parent_id: _,
+            child_order: _,
+            order_key: _,
+            shared: _,
+            can_assign_tasks: _,
+            is_deleted: _,
+            is_archived: _,
+            is_frozen: _,
+            role: _,
+            inbox_project: _,
+            folder_id: _,
+            created_at: _,
+            updated_at: _,
+            is_pending_default_collaborator_invites: _,
+            default_order_key: _,
+        } = project;
+
+        let is_team = workspace_id.is_none();
+
+        Self {
+            id,
+            name: Some(name),
+            color: Some(color),
+            is_collapsed: Some(is_collapsed),
+            order_key: None, // omitted keeps the server's current key
+            default_order_key: None,
+            is_favorite: Some(is_favorite),
+            view_style: Some(view_style),
+            description: is_team.then_some(description),
+            status: is_team.then_some(status),
+            is_link_sharing_enabled: is_team.then_some(is_link_sharing_enabled),
+            access: Some(access),
+            is_project_insights_enabled,
+            collaborator_role_default,
+        }
     }
 }
 
@@ -203,6 +317,15 @@ pub struct MoveProjectOutOfWorkspace {
     use_lro: bool,
 }
 
+impl From<Project> for MoveProjectOutOfWorkspace {
+    fn from(project: Project) -> Self {
+        Self {
+            id: project.id,
+            use_lro: true,
+        }
+    }
+}
+
 impl CommandArgs for MoveProjectOutOfWorkspace {
     fn command_type(&self) -> &'static str {
         "project_move_to_personal"
@@ -282,7 +405,7 @@ impl CommandArgs for UnarchiveProject {
     }
 }
 
-/// Unarchive a project and its descendants.
+/// Change a project's role.
 #[skip_serializing_none]
 #[derive(Serialize, Debug, Builder, Clone, PartialEq, Eq)]
 #[cfg_attr(test, derive(Default))]
@@ -304,6 +427,24 @@ impl CommandArgs for ChangeProjectRole {
     }
     fn creates_resource(&self) -> bool {
         false
+    }
+}
+
+impl From<Project> for DeleteProject {
+    fn from(project: Project) -> Self {
+        Self { id: project.id }
+    }
+}
+
+impl From<Project> for ArchiveProject {
+    fn from(project: Project) -> Self {
+        Self { id: project.id }
+    }
+}
+
+impl From<Project> for UnarchiveProject {
+    fn from(project: Project) -> Self {
+        Self { id: project.id }
     }
 }
 

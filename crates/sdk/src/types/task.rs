@@ -1,5 +1,6 @@
 use std::{num::NonZeroU32, str::FromStr};
 
+use bon::Builder;
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use chrono_tz::Tz;
 use isolang::Language;
@@ -7,12 +8,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     error::Result,
-    types::{Id, Uid},
+    types::{Id, Priority, Uid},
 };
 
-#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Builder,
+)]
 pub struct Task {
     /// The ID of the task.
+    #[serde(default)]
+    #[builder(default)]
     pub id: Id,
     /// The owner of the task.
     pub user_id: Uid,
@@ -28,18 +33,17 @@ pub struct Task {
     pub due: Option<DueDate>,
     /// The deadline of the task.
     pub deadline: Option<Deadline>,
-    /// The priority of the task (a number between `1` and
-    /// `4`, `4` for very urgent and `1` for natural).
-    ///
-    /// **Note:** Keep in mind that very urgent is the
-    /// priority `1` on clients. So, `p1` will return `4` in
-    /// the API.
-    pub priority: u8,
+    /// The priority of the task.
+    #[serde(default)]
+    #[builder(default)]
+    pub priority: Priority,
     /// The ID of the parent task. Set to `None` for root
     /// tasks.
     pub parent_id: Option<Id>,
     /// The order of the task. Defines the position of the
     /// task among all the tasks with the same parent.
+    #[serde(default)]
+    #[builder(default)]
     pub child_order: i32,
     /// Task's fractional-indexing order key: tasks sort by
     /// comparing keys lexicographically among siblings
@@ -52,11 +56,17 @@ pub struct Task {
     /// The order of the task inside the `Today` or
     /// `Next 7 days` view (a number, where the smallest
     /// value would place the task at the top).
+    #[serde(default)]
+    #[builder(default)]
     pub day_order: i32,
     /// Whether the task's sub-tasks are collapsed.
+    #[serde(default)]
+    #[builder(default)]
     pub is_collapsed: bool,
     /// The task's labels (a list of names that may
     /// represent either personal or shared labels).
+    #[serde(default)]
+    #[builder(default)]
     pub labels: Vec<String>,
     /// The UID of the user who created the task. This makes
     /// sense for shared projects only. For tasks created
@@ -76,15 +86,21 @@ pub struct Task {
     /// unset.
     pub responsible_uid: Option<Uid>,
     /// Whether the task is marked as completed.
+    #[serde(default)]
+    #[builder(default)]
     pub checked: bool,
     /// Whether the task is marked as deleted.
+    #[serde(default)]
+    #[builder(default)]
     pub is_deleted: bool,
     /// The date when the task was completed (or `None` if
     /// not completed).
     pub completed_at: Option<DateTime<Utc>>,
     /// The datetime when the task was created.
+    #[builder(default = Utc::now())]
     pub added_at: DateTime<Utc>,
-    /// The datetime when the task was updated.
+    /// The datetime when the task was last updated.
+    #[builder(default = Utc::now())]
     pub updated_at: DateTime<Utc>,
     /// Represents a task's duration. Is `None` if the task has no duration.
     pub duration: Option<TaskDuration>,
@@ -321,7 +337,7 @@ mod tests {
                     .expect("date should be valid"),
                 lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
             }),
-            priority: 1,
+            priority: Priority::NoPriority,
             parent_id: Some(Id(String::from("6XGgmFVcrG5RRjVr"))),
             child_order: 1,
             order_key: Some(String::from("a1V")),
