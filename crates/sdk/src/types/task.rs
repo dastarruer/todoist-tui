@@ -16,6 +16,7 @@ use crate::{
 )]
 pub struct Task {
     /// The ID of the task.
+    #[serde(default)]
     #[builder(default)]
     pub id: Id,
     /// The owner of the task.
@@ -33,6 +34,7 @@ pub struct Task {
     /// The deadline of the task.
     pub deadline: Option<Deadline>,
     /// The priority of the task.
+    #[serde(default)]
     #[builder(default)]
     pub priority: Priority,
     /// The ID of the parent task. Set to `None` for root
@@ -40,6 +42,7 @@ pub struct Task {
     pub parent_id: Option<Id>,
     /// The order of the task. Defines the position of the
     /// task among all the tasks with the same parent.
+    #[serde(default)]
     #[builder(default)]
     pub child_order: i32,
     /// Task's fractional-indexing order key: tasks sort by
@@ -53,13 +56,16 @@ pub struct Task {
     /// The order of the task inside the `Today` or
     /// `Next 7 days` view (a number, where the smallest
     /// value would place the task at the top).
+    #[serde(default)]
     #[builder(default)]
     pub day_order: i32,
     /// Whether the task's sub-tasks are collapsed.
+    #[serde(default)]
     #[builder(default)]
     pub is_collapsed: bool,
     /// The task's labels (a list of names that may
     /// represent either personal or shared labels).
+    #[serde(default)]
     #[builder(default)]
     pub labels: Vec<String>,
     /// The UID of the user who created the task. This makes
@@ -80,9 +86,11 @@ pub struct Task {
     /// unset.
     pub responsible_uid: Option<Uid>,
     /// Whether the task is marked as completed.
+    #[serde(default)]
     #[builder(default)]
     pub checked: bool,
     /// Whether the task is marked as deleted.
+    #[serde(default)]
     #[builder(default)]
     pub is_deleted: bool,
     /// The date when the task was completed (or `None` if

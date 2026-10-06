@@ -1,6 +1,6 @@
 use bon::Builder;
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::types::{Color, Id};
 
@@ -10,6 +10,7 @@ use crate::types::{Color, Id};
 #[allow(clippy::struct_excessive_bools)]
 pub struct Project {
     /// The ID of the project.
+    #[serde(default)]
     #[builder(default)]
     pub id: Id,
     /// The name of the project.
@@ -17,18 +18,28 @@ pub struct Project {
     /// Description for the project. Only used for teams.
     pub description: String,
     /// Real or temp ID of the workspace the project. Only used for teams.
-    pub workspace_id: u32,
+    ///
+    /// This is a `String` because the Todoist API makes no sense. Sometimes,
+    /// this is a `u32`, and sometimes this is a `String`. what can you do...
+    #[serde(
+        default,
+        deserialize_with = "deserialize_workspace_id",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub workspace_id: Option<String>,
     /// Indicates if the project is invite-only or if it should be visible for
     /// everyone in the workspace. If missing or null, the default value from
     /// the workspace `is_invite_only_default` will be used. Only used for
     /// teams.
     pub is_invite_only: Option<bool>,
     /// The status of the project. Only used for teams.
+    #[serde(default)]
     #[builder(default)]
     pub status: ProjectStatus,
     /// If `false`, the project is invite-only and people can't join by link.
     /// If true, the project is visible to anyone with a link, and anyone can
     /// join it. Only used for teams.
+    #[serde(default)]
     #[builder(default)]
     pub is_link_sharing_enabled: bool,
     /// The default role a user can have. Only used for teams.
@@ -39,6 +50,7 @@ pub struct Project {
     /// projects.
     pub parent_id: Option<Id>,
     /// The order of the project. Defines the position of the project among all the projects with the same `parent_id`
+    #[serde(default)]
     #[builder(default)]
     pub child_order: i32,
     /// Project's fractional-indexing order key: personal projects sort by
@@ -47,32 +59,41 @@ pub struct Project {
     /// `None` for workspace projects (ordered via folders instead).
     pub order_key: Option<String>,
     /// Whether the project's sub-projects are collapsed.
+    #[serde(default)]
     #[builder(default)]
     pub is_collapsed: bool,
     /// Whether the project is shared.
+    #[serde(default)]
     #[builder(default)]
     pub shared: bool,
     /// Whether tasks in the project can be assigned to users.
+    #[serde(default)]
     #[builder(default)]
     pub can_assign_tasks: bool,
     /// Whether the project is marked as deleted.
+    #[serde(default)]
     #[builder(default)]
     pub is_deleted: bool,
     /// Whether the project is marked as archived.
+    #[serde(default)]
     #[builder(default)]
     pub is_archived: bool,
     /// Whether the project is a favorite.
+    #[serde(default)]
     #[builder(default)]
     pub is_favorite: bool,
     /// Whether the project is from a canceled subscription.
+    #[serde(default)]
     #[builder(default)]
     pub is_frozen: bool,
     /// The mode in which to render tasks in this project.
+    #[serde(default)]
     #[builder(default)]
     pub view_style: ViewStyle,
     /// The role of the requesting user. Only used for teams.
     pub role: Role,
     /// Whether the project is `Inbox`.
+    #[serde(default)]
     #[builder(default)]
     pub inbox_project: bool,
     /// The ID of the folder which this project is in.
@@ -85,12 +106,15 @@ pub struct Project {
     pub updated_at: DateTime<Utc>,
     /// If `true`, default collaborators are still being added to the project
     /// in the background. Only used for teams.
+    #[serde(default)]
+    #[builder(default)]
     pub is_pending_default_collaborator_invites: bool,
     /// Project access configuration.
     pub access: ProjectAccess,
     /// Whether Project Insights is enabled for this project. Defaults to
     /// `true` for new workspace projects. Only used for teams.
     #[serde(default)]
+    #[builder(default)]
     pub is_project_insights_enabled: bool,
     /// Fractional-indexing key for the workspace's shared default-ordering
     /// scope: workspace projects and folders sort by comparing keys
@@ -109,8 +133,10 @@ pub struct ProjectAccess {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ProjectConfiguration {
     /// Whether collaborator details are hidden from public viewers.
+    #[serde(default)]
     pub hide_collaborator_details: bool,
     /// Whether public viewers can duplicate this project.
+    #[serde(default)]
     pub disable_duplication: bool,
 }
 
@@ -154,6 +180,27 @@ pub enum ViewStyle {
     Calendar,
 }
 
+fn deserialize_workspace_id<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum StringOrNumber {
+        String(String),
+        Number(i64),
+        Float(f64),
+    }
+
+    Ok(
+        Option::<StringOrNumber>::deserialize(deserializer)?.map(|v| match v {
+            StringOrNumber::String(s) => s,
+            StringOrNumber::Number(i) => i.to_string(),
+            StringOrNumber::Float(f) => f.to_string(),
+        }),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -169,7 +216,7 @@ mod tests {
             id: Id(String::from("6Jf8VQXxpwv56VQ7")),
             name: String::from("Shopping List"),
             description: String::from("Stuff to buy"),
-            workspace_id: 12345,
+            workspace_id: Some(String::from("12345")),
             is_invite_only: Some(false),
             status: ProjectStatus::InProgress,
             is_link_sharing_enabled: true,

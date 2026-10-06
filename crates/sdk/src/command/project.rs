@@ -39,7 +39,7 @@ pub struct AddProject {
     /// Determines the way the project is displayed within Todoist clients.
     pub view_style: Option<ViewStyle>,
     /// ID of the workspace the project should belong to.
-    pub workspace_id: Option<Id>,
+    pub workspace_id: Option<String>,
     /// Indicates if the project is invite-only or if it should be visible for everyone in the workspace. If left as `None`, the default value from the workspace `is_invite_only_default` will be used. Only used for teams.
     pub is_invite_only: Option<bool>,
     /// If `false`, the project is invite-only and people can't join by link. If `true`, the project is visible to anyone with a link, and anyone can join it. Only used for teams.
@@ -100,7 +100,7 @@ impl From<Project> for AddProject {
 
         // `Project` stores plain values for team-only fields, so their defaults
         // would otherwise be sent for personal projects too.
-        let is_team = workspace_id != 0;
+        let is_team = workspace_id.is_none();
 
         Self {
             name,
@@ -113,7 +113,7 @@ impl From<Project> for AddProject {
             order_key: None,
             is_favorite: Some(is_favorite),
             view_style: Some(view_style),
-            workspace_id: is_team.then(|| Id(workspace_id.to_string())),
+            workspace_id,
             is_invite_only,
             is_link_sharing_enabled: is_team.then_some(is_link_sharing_enabled),
             collaborator_role_default,
@@ -204,7 +204,7 @@ impl From<Project> for UpdateProject {
             default_order_key: _,
         } = project;
 
-        let is_team = workspace_id != 0;
+        let is_team = workspace_id.is_none();
 
         Self {
             id,
