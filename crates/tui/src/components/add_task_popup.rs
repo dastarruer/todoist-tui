@@ -51,6 +51,10 @@ impl<'a> AddTaskPopup<'a> {
             _ => unreachable!(),
         };
     }
+
+    fn is_addable_task(&self) -> bool {
+        !self.content().is_empty()
+    }
 }
 
 impl Component for AddTaskPopup<'_> {
@@ -95,12 +99,41 @@ impl Component for AddTaskPopup<'_> {
                 None
             }
             KeyCode::Esc => Some(Action::CloseAddTaskModal),
-            KeyCode::Enter if event.modifiers.contains(KeyModifiers::ALT) => Some(Action::AddTask),
+            KeyCode::Enter
+                if event.modifiers.contains(KeyModifiers::ALT) && self.is_addable_task() =>
+            {
+                Some(Action::AddTask)
+            }
             _ => {
                 #[allow(clippy::indexing_slicing)]
                 self.textareas[self.focused_index].input(event);
                 None
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn addable_tasks() {
+        let mut popup = AddTaskPopup::new();
+        assert!(!popup.is_addable_task());
+
+        popup.handle_key(KeyEvent::from(KeyCode::Char('c')));
+        assert!(popup.is_addable_task());
+    }
+
+    #[test]
+    fn adding_valid_tasks() {
+        let mut popup = AddTaskPopup::new();
+        let action = popup.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::ALT));
+        assert_eq!(action, None); // Empty task content, so should not be added
+
+        popup.handle_key(KeyEvent::from(KeyCode::Char('c')));
+        let action = popup.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::ALT));
+        assert_eq!(action, Some(Action::AddTask)); // Since there is content, task should be added
     }
 }
