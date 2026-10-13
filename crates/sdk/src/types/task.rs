@@ -20,6 +20,7 @@ pub struct Task {
     #[builder(default)]
     pub id: Id,
     /// The owner of the task.
+    #[builder(into)]
     pub user_id: Uid,
     /// The ID of the parent project.
     pub project_id: Id,
