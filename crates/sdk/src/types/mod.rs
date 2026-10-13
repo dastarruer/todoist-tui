@@ -20,13 +20,21 @@ pub enum Priority {
     NoPriority = 1,
 }
 
+/// Represents an ID string, which is used to identify objects such as tasks,
+/// projects, etc.
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Id(pub String);
+pub struct Id(String);
 
 impl Id {
     #[must_use]
     pub fn new() -> Self {
         Self(Uuid::new_v4().to_string())
+    }
+
+    /// Consumes the ID and returns the ID as a `String`.
+    #[must_use]
+    pub fn id(self) -> String {
+        self.0
     }
 }
 
@@ -54,19 +62,38 @@ impl From<&str> for Id {
     }
 }
 
+/// Represents a user ID string, which is used to identify users.
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Uid(pub String);
+pub struct Uid(String);
 
 impl Uid {
     #[must_use]
     pub fn new() -> Self {
         Self(Uuid::new_v4().to_string())
     }
+
+    /// Consumes the UID and returns the UID as a `String`.
+    #[must_use]
+    pub fn uid(self) -> String {
+        self.0
+    }
 }
 
 impl Default for Uid {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl From<String> for Uid {
+    fn from(value: String) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&str> for Uid {
+    fn from(value: &str) -> Self {
+        Self(String::from(value))
     }
 }
 

@@ -108,7 +108,7 @@ impl From<Project> for AddProject {
             status: is_team.then_some(status),
             color: Some(color),
             parent_id,
-            folder_id: folder_id.map(|id| id.0),
+            folder_id: folder_id.map(Id::id),
             child_order: None, // omitted so the backend places it at the bottom
             order_key: None,
             is_favorite: Some(is_favorite),

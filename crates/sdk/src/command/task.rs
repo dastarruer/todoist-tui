@@ -122,7 +122,7 @@ impl From<Task> for AddTask {
             due,
             deadline,
             priority: Some(priority),
-            parent_id: parent_id.map(|id| id.0),
+            parent_id: parent_id.map(Id::id),
             child_order: None, // omitted so the backend places it at the bottom
             order_key: None,
             section_id,
