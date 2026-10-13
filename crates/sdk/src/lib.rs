@@ -5,7 +5,7 @@ pub mod types;
 use crate::{
     command::{Command, CommandArgs},
     error::Result,
-    types::{project::Project, task::Task},
+    types::{project::Project, task::Task, user::User},
 };
 
 use std::{collections::HashMap, num::NonZeroU16, str::FromStr, time::Duration};
@@ -203,6 +203,7 @@ pub struct SyncResponse {
     /// some reason.
     pub items: Option<Vec<Task>>,
     pub projects: Option<Vec<Project>>,
+    pub user: Option<User>,
     /// Whether the response is a full sync or an incremental sync.
     #[serde(default)]
     pub full_sync: bool,
