@@ -13,7 +13,7 @@ use todoist_sdk::{
         Command, CommandArgs,
         task::{AddTask, CompleteTask},
     },
-    types::{Id, Uid, task::Task},
+    types::{Id, task::Task, user::User},
 };
 
 use crate::{
@@ -32,7 +32,7 @@ pub struct App<'a> {
     pub view: ViewState,
     pub should_quit: bool,
     inbox_id: Id,
-    user_id: Uid,
+    user: User,
     client: APIClient,
     task_list: TaskList,
     add_task_popup: Option<AddTaskPopup<'a>>,
@@ -41,12 +41,18 @@ pub struct App<'a> {
 impl App<'_> {
     pub async fn new(mut client: APIClient) -> color_eyre::Result<Self> {
         let resp = client
-            .sync(vec![ResourceType::Items, ResourceType::Projects])
+            .sync(vec![
+                ResourceType::Items,
+                ResourceType::Projects,
+                ResourceType::User,
+            ])
             .await?;
-        let tasks = resp.items.unwrap_or_default();
-        // TODO: Add command to retrieve user data
-        let user_id = tasks.first().ok_or_eyre("no tasks exist; this app currently requires some tasks to exist in order to determine the user ID because im lazy")?.user_id.clone();
+        log::debug!("initial sync response: {resp:#?}");
 
+        let user = resp
+            .user
+            .ok_or_eyre("user not available on Todoist backend")?;
+        let tasks = resp.items.unwrap_or_default();
         let projects = resp.projects.unwrap_or_default();
         let inbox_id = projects
             .iter()
@@ -54,11 +60,12 @@ impl App<'_> {
             .expect("Inbox project should exist")
             .id
             .clone();
+
         Ok(Self {
             view: ViewState::List,
             should_quit: false,
             inbox_id,
-            user_id,
+            user,
             client,
             task_list: TaskList::new(tasks),
             add_task_popup: None,
@@ -105,10 +112,10 @@ impl App<'_> {
     ) -> color_eyre::Result<()> {
         let description = description.unwrap_or_default();
         let task = Task::builder()
-            .content(content.clone())
-            .description(description.clone())
+            .content(content)
+            .description(description)
             .project_id(self.inbox_id.clone())
-            .user_id(self.user_id.clone())
+            .user_id(self.user.id.clone())
             .build();
         self.task_list.add_task(task.clone());
 

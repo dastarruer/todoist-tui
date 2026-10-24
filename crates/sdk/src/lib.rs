@@ -87,7 +87,7 @@ impl APIClient {
                 .text()
                 .await?,
         )?;
-        self.sync_key = SyncKey(resp.sync_token.clone());
+        self.sync_key = resp.sync_token.clone();
 
         Ok(resp)
     }
@@ -207,7 +207,7 @@ pub struct SyncResponse {
     /// Whether the response is a full sync or an incremental sync.
     #[serde(default)]
     pub full_sync: bool,
-    sync_token: String,
+    sync_token: SyncKey,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
