@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use color_eyre::eyre::OptionExt;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
@@ -28,9 +30,44 @@ pub enum ViewState {
 }
 
 #[derive(Debug)]
+struct KeybindHints {
+    hints: HashMap<String, String>,
+}
+
+impl KeybindHints {
+    fn new() -> Self {
+        let hints = HashMap::from([
+            (String::from("<j/k>"), String::from("move")),
+            (String::from("<a>"), String::from("add task")),
+        ]);
+        Self { hints }
+    }
+
+    /// Empty all bind hints.
+    fn empty(&mut self) {
+        self.hints = HashMap::new();
+    }
+
+    /// Return all keybind hints as a `Vec<Span>` to be used in ratatui
+    /// components.
+    fn spans(&self) -> Vec<Span<'_>> {
+        self.hints
+            .iter()
+            .flat_map(|(bind, hint)| {
+                [
+                    Span::from(format!("{bind} ")).blue(),
+                    Span::from(format!("{hint} ")),
+                ]
+            })
+            .collect::<Vec<Span>>()
+    }
+}
+
+#[derive(Debug)]
 pub struct App<'a> {
     pub view: ViewState,
     pub should_quit: bool,
+    hints: KeybindHints,
     inbox_id: Id,
     user: User,
     client: APIClient,
@@ -40,6 +77,8 @@ pub struct App<'a> {
 
 impl App<'_> {
     pub async fn new(mut client: APIClient) -> color_eyre::Result<Self> {
+        let hints = KeybindHints::new();
+
         let resp = client
             .sync(vec![
                 ResourceType::Items,
@@ -64,6 +103,7 @@ impl App<'_> {
         Ok(Self {
             view: ViewState::List,
             should_quit: false,
+            hints,
             inbox_id,
             user,
             client,
@@ -101,6 +141,7 @@ impl App<'_> {
     }
 
     fn start_adding_task(&mut self) {
+        self.hints.empty();
         self.view = ViewState::AddTask;
         self.add_task_popup = Some(AddTaskPopup::new());
     }
@@ -137,6 +178,7 @@ impl App<'_> {
     }
 
     fn cancel_adding_task(&mut self) {
+        self.hints = KeybindHints::new();
         self.view = ViewState::List;
         self.add_task_popup = None;
     }
@@ -181,12 +223,7 @@ impl Component for App<'_> {
         frame.render_widget(sidebar, sidebar_area);
 
         // Keybind hints
-        let hints = Paragraph::new(Line::from(vec![
-            Span::from("<j/k> ").blue(),
-            Span::from("move "),
-            Span::from("<a> ").blue(),
-            Span::from("add task "),
-        ]));
+        let hints = Paragraph::new(Line::from(self.hints.spans()));
         frame.render_widget(hints, footer_area);
 
         if let Some(popup) = self.add_task_popup.as_ref() {
