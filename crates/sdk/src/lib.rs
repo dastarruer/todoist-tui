@@ -5,7 +5,7 @@ pub mod types;
 use crate::{
     command::{Command, CommandArgs},
     error::Result,
-    types::{project::Project, task::Task},
+    types::{project::Project, task::Task, user::User},
 };
 
 use std::{collections::HashMap, num::NonZeroU16, str::FromStr, time::Duration};
@@ -14,6 +14,7 @@ use reqwest::{Client, Url};
 use serde::{Deserialize, Deserializer, Serialize};
 use uuid::Uuid;
 
+#[derive(Debug, Default, Clone)]
 pub struct APIClient {
     pub key: String,
     pub sync_key: SyncKey,
@@ -86,7 +87,7 @@ impl APIClient {
                 .text()
                 .await?,
         )?;
-        self.sync_key = SyncKey(resp.sync_token.clone());
+        self.sync_key = resp.sync_token.clone();
 
         Ok(resp)
     }
@@ -123,7 +124,7 @@ impl APIClient {
     /// [`SyncWriteOutput::errors`] for info on failed commands.
     pub async fn send(
         &mut self,
-        commands: &[Command<&dyn CommandArgs>],
+        commands: &[Command<Box<dyn CommandArgs>>],
     ) -> Result<SyncWriteOutput> {
         let commands = serde_json::to_string(commands)?;
         let data = [("commands", commands)];
@@ -202,10 +203,11 @@ pub struct SyncResponse {
     /// some reason.
     pub items: Option<Vec<Task>>,
     pub projects: Option<Vec<Project>>,
+    pub user: Option<User>,
     /// Whether the response is a full sync or an incremental sync.
     #[serde(default)]
     pub full_sync: bool,
-    sync_token: String,
+    sync_token: SyncKey,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -218,6 +220,7 @@ pub enum ResourceType {
     /// some reason.
     Items,
     Projects,
+    User,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
