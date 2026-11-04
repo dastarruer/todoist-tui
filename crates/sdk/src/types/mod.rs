@@ -1,11 +1,48 @@
 pub mod project;
 pub mod task;
+pub mod user;
 
 use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use uuid::Uuid;
 
-#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Id(pub String);
+/// The priority of a task.
+#[derive(
+    Deserialize_repr, Serialize_repr, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
+#[repr(u8)]
+pub enum Priority {
+    // Priority numbers are backwards for reasons: https://developer.todoist.com/api/v1/#tag/Sync/Tasks/Update-a-task
+    P1 = 4,
+    P2 = 3,
+    P3 = 2,
+    #[default]
+    NoPriority = 1,
+}
+
+/// Represents an ID string, which is used to identify objects such as tasks,
+/// projects, etc.
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Id(String);
+
+impl Id {
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4().to_string())
+    }
+
+    /// Consumes the ID and returns the ID as a `String`.
+    #[must_use]
+    pub fn id(self) -> String {
+        self.0
+    }
+}
+
+impl Default for Id {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl From<Uuid> for Id {
     fn from(value: Uuid) -> Self {
@@ -25,8 +62,40 @@ impl From<&str> for Id {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Uid(pub String);
+/// Represents a user ID string, which is used to identify users.
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Uid(String);
+
+impl Uid {
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4().to_string())
+    }
+
+    /// Consumes the UID and returns the UID as a `String`.
+    #[must_use]
+    pub fn uid(self) -> String {
+        self.0
+    }
+}
+
+impl Default for Uid {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<String> for Uid {
+    fn from(value: String) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&str> for Uid {
+    fn from(value: &str) -> Self {
+        Self(String::from(value))
+    }
+}
 
 /// Represents a Todoist color option.
 ///
