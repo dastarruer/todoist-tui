@@ -5,9 +5,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    style::Stylize,
-    text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    widgets::{Block, Borders, List, ListItem},
 };
 use todoist_sdk::{
     APIClient, ResourceType,
@@ -20,47 +18,15 @@ use todoist_sdk::{
 
 use crate::{
     action::Action,
-    components::{Component, add_task_popup::AddTaskPopup, task_list::TaskList},
+    components::{
+        Component, add_task_popup::AddTaskPopup, keybind_hints::KeybindHints, task_list::TaskList,
+    },
 };
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ViewState {
     List,
     AddTask,
-}
-
-#[derive(Debug)]
-struct KeybindHints {
-    hints: HashMap<String, String>,
-}
-
-impl KeybindHints {
-    fn new() -> Self {
-        let hints = HashMap::from([
-            (String::from("<j/k>"), String::from("move")),
-            (String::from("<a>"), String::from("add task")),
-        ]);
-        Self { hints }
-    }
-
-    /// Empty all bind hints.
-    fn empty(&mut self) {
-        self.hints = HashMap::new();
-    }
-
-    /// Return all keybind hints as a `Vec<Span>` to be used in ratatui
-    /// components.
-    fn spans(&self) -> Vec<Span<'_>> {
-        self.hints
-            .iter()
-            .flat_map(|(bind, hint)| {
-                [
-                    Span::from(format!("{bind} ")).blue(),
-                    Span::from(format!("{hint} ")),
-                ]
-            })
-            .collect::<Vec<Span>>()
-    }
 }
 
 #[derive(Debug)]
@@ -141,7 +107,7 @@ impl App<'_> {
     }
 
     fn start_adding_task(&mut self) {
-        self.hints.empty();
+        self.hints.push(HashMap::new());
         self.view = ViewState::AddTask;
         self.add_task_popup = Some(AddTaskPopup::new());
     }
@@ -205,7 +171,7 @@ impl Component for App<'_> {
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(95), Constraint::Max(10)])
             .split(area);
-        let footer_area = chunks[1];
+        let bind_hints_area = chunks[1];
         let view_area = chunks[0];
 
         // Sidebar and tasks
@@ -222,9 +188,7 @@ impl Component for App<'_> {
             .block(Block::default().borders(Borders::RIGHT | Borders::BOTTOM));
         frame.render_widget(sidebar, sidebar_area);
 
-        // Keybind hints
-        let hints = Paragraph::new(Line::from(self.hints.spans()));
-        frame.render_widget(hints, footer_area);
+        self.hints.draw(frame, bind_hints_area);
 
         if let Some(popup) = self.add_task_popup.as_ref() {
             popup.draw(frame, area);
