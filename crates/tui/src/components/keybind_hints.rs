@@ -11,7 +11,7 @@ use ratatui::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Key(String);
+pub struct Key(pub String);
 
 impl Display for Key {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
@@ -20,7 +20,7 @@ impl Display for Key {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Action(String);
+pub struct Action(pub String);
 
 impl Display for Action {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
