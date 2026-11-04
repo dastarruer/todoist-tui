@@ -26,7 +26,7 @@ fn inactivate(textarea: &mut TextArea, block_title: &str) {
         Block::default()
             .borders(Borders::ALL)
             .style(Style::default().fg(Color::DarkGray))
-            .title(format!(" {block_title} (^X to switch) ")),
+            .title(format!(" {block_title} (<tab> to toggle focus) ")),
     );
 }
 

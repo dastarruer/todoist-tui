@@ -94,7 +94,7 @@ impl Component for AddTaskPopup<'_> {
 
     fn handle_key(&mut self, event: KeyEvent) -> Option<Action> {
         match event.code {
-            KeyCode::Char('x') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+            KeyCode::Tab => {
                 self.cycle_focus();
                 None
             }
