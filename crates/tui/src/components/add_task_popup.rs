@@ -1,7 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect},
     style::Stylize,
     text::Span,
     widgets::{Block, Clear},
@@ -61,11 +61,18 @@ impl Component for AddTaskPopup<'_> {
     #[allow(clippy::indexing_slicing)]
     fn draw(&self, frame: &mut Frame, area: Rect) {
         let area = area.centered(Constraint::Max(50), Constraint::Max(10));
-        let popup = Block::bordered().title_bottom(vec![
-            Span::from("<alt + enter> ").blue(),
-            Span::from("add task"),
-        ]);
         frame.render_widget(Clear, area);
+
+        let popup = if self.is_addable_task() {
+            Block::bordered()
+                .title_bottom(vec![
+                    Span::from("<alt + enter> ").blue(),
+                    Span::from("submit"),
+                ])
+                .title_alignment(HorizontalAlignment::Right)
+        } else {
+            Block::bordered()
+        };
         frame.render_widget(&popup, area);
 
         let chunks = Layout::default()
