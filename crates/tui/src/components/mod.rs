@@ -10,6 +10,7 @@ use ratatui_textarea::TextArea;
 use crate::action::Action;
 
 pub mod add_task_popup;
+pub mod keybind_hints;
 pub mod task_list;
 
 pub trait Component {
