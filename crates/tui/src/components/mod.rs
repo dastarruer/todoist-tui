@@ -3,7 +3,7 @@ use ratatui::{
     Frame,
     layout::Rect,
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders},
+    widgets::Block,
 };
 use ratatui_textarea::TextArea;
 
@@ -23,8 +23,7 @@ fn inactivate(textarea: &mut TextArea, block_title: &str) {
     textarea.set_cursor_line_style(Style::default());
     textarea.set_cursor_style(Style::default());
     textarea.set_block(
-        Block::default()
-            .borders(Borders::ALL)
+        Block::bordered()
             .style(Style::default().fg(Color::DarkGray))
             .title(format!(" {block_title} (<tab> to toggle focus) ")),
     );
@@ -34,8 +33,7 @@ fn activate(textarea: &mut TextArea, block_title: &str) {
     textarea.set_cursor_line_style(Style::default());
     textarea.set_cursor_style(Style::default().add_modifier(Modifier::REVERSED));
     textarea.set_block(
-        Block::default()
-            .borders(Borders::ALL)
+        Block::bordered()
             .style(Style::default())
             .title(format!("{block_title}:")),
     );
