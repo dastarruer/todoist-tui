@@ -3554,6 +3554,7 @@ dependencies = [
  "crossterm",
  "flexi_logger",
  "log",
+ "pretty_assertions",
  "ratatui",
  "ratatui-textarea",
  "todoist-sdk",
