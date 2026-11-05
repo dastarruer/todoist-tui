@@ -33,8 +33,9 @@ pub struct KeybindHints {
 impl KeybindHints {
     pub fn new() -> Self {
         let hints = vec![
-            (Key(String::from("<j/k>")), Action(String::from("move"))),
-            (Key(String::from("<a>")), Action(String::from("add task"))),
+            (Key(String::from("j/k")), Action(String::from("move"))),
+            (Key(String::from("a")), Action(String::from("add"))),
+            (Key(String::from("enter")), Action(String::from("complete"))),
         ];
         Self { hints }
     }
@@ -50,7 +51,7 @@ impl KeybindHints {
         let mut spans = self
             .hints
             .iter()
-            .flat_map(|(action, key)| {
+            .flat_map(|(key, action)| {
                 [
                     Span::from(format!("{action}: ")).blue(),
                     Span::from(format!("<{key}>")).blue(),
