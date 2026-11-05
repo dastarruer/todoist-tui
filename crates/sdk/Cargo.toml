@@ -9,7 +9,6 @@ chrono = { version = "0.4.45", features = ["serde"] }
 chrono-tz = { version = "0.10.4", features = ["serde"] }
 erased-serde = "0.4.10"
 isolang = { version = "2.4.0", features = ["serde"] }
-keyring = { version = "4.2.0", features = ["v1"] }
 reqwest = { version = "0.13.5", features = ["form", "json"] }
 serde = "1.0.229"
 serde-aux = "4.7.0"
@@ -18,7 +17,7 @@ serde_repr = "0.1.21"
 serde_with = "3.24.0"
 thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
-uuid = { version = "1.26.1", features = ["v4"] }
+uuid = { version = "1.26.1", features = ["serde", "v4"] }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
