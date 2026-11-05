@@ -15,3 +15,6 @@ ratatui-textarea = "0.9.2"
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"
