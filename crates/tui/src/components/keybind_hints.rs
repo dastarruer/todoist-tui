@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    fmt::{Display, Formatter},
-};
+use std::fmt::{Display, Formatter};
 
 use crate::components::Component;
 use ratatui::{
@@ -30,20 +27,20 @@ impl Display for Action {
 
 #[derive(Debug)]
 pub struct KeybindHints {
-    hints: HashMap<Key, Action>,
+    hints: Vec<(Key, Action)>,
 }
 
 impl KeybindHints {
     pub fn new() -> Self {
-        let hints = HashMap::from([
+        let hints = vec![
             (Key(String::from("<j/k>")), Action(String::from("move"))),
             (Key(String::from("<a>")), Action(String::from("add task"))),
-        ]);
+        ];
         Self { hints }
     }
 
     /// Push a new set of keybind hints.
-    pub fn push(&mut self, hints: HashMap<Key, Action>) {
+    pub fn push(&mut self, hints: Vec<(Key, Action)>) {
         self.hints = hints;
     }
 

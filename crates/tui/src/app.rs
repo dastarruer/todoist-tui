@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use color_eyre::eyre::OptionExt;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
@@ -107,7 +105,7 @@ impl App<'_> {
     }
 
     fn start_adding_task(&mut self) {
-        self.hints.push(HashMap::new());
+        self.hints.push(Vec::new());
         self.view = ViewState::AddTask;
         self.add_task_popup = Some(AddTaskPopup::new());
     }
