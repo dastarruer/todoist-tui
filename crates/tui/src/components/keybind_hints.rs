@@ -7,7 +7,7 @@ use ratatui::{
     widgets::Paragraph,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Key(pub String);
 
 impl Display for Key {
@@ -16,7 +16,7 @@ impl Display for Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Action(pub String);
 
 impl Display for Action {
@@ -47,15 +47,19 @@ impl KeybindHints {
     /// Return all keybind hints as a `Vec<Span>` to be used in ratatui
     /// components.
     fn spans(&self) -> Vec<Span<'_>> {
-        self.hints
+        let mut spans = self
+            .hints
             .iter()
-            .flat_map(|(bind, hint)| {
+            .flat_map(|(action, key)| {
                 [
-                    Span::from(format!("{bind} ")).blue(),
-                    Span::from(format!("{hint} ")),
+                    Span::from(format!("{action}: ")).blue(),
+                    Span::from(format!("<{key}>")).blue(),
+                    Span::from(String::from(" | ")).dark_gray(),
                 ]
             })
-            .collect::<Vec<Span>>()
+            .collect::<Vec<Span>>();
+        spans.pop(); // remove last separator
+        spans
     }
 }
 

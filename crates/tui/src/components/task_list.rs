@@ -3,7 +3,7 @@ use ratatui::{
     Frame,
     layout::{Constraint, Rect},
     style::{Color, Style},
-    widgets::{Block, Borders, Row, Table},
+    widgets::{Block, Row, Table},
 };
 use todoist_sdk::types::{Id, task::Task};
 
@@ -65,8 +65,7 @@ impl Component for TaskList {
             let row = Row::new(vec![format!("[ ] {}", task.content)]).style(task_style);
             task_rows.push(row);
         }
-        let tasks_table = Table::new(task_rows, [Constraint::Fill(1)])
-            .block(Block::new().borders(Borders::LEFT | Borders::BOTTOM));
+        let tasks_table = Table::new(task_rows, [Constraint::Fill(1)]).block(Block::bordered());
         frame.render_widget(tasks_table, area);
     }
 

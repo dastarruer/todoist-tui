@@ -3,7 +3,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, Borders, List, ListItem},
+    widgets::{Block, List, ListItem},
 };
 use todoist_sdk::{
     APIClient, ResourceType,
@@ -182,8 +182,7 @@ impl Component for App<'_> {
 
         self.task_list.draw(frame, tasks_area);
 
-        let sidebar = List::new(Vec::<ListItem>::new())
-            .block(Block::default().borders(Borders::RIGHT | Borders::BOTTOM));
+        let sidebar = List::new(Vec::<ListItem>::new()).block(Block::bordered());
         frame.render_widget(sidebar, sidebar_area);
 
         self.hints.draw(frame, bind_hints_area);
