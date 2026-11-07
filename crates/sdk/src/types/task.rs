@@ -7,7 +7,7 @@ use isolang::Language;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    error::Result,
+    error::{Error, Result},
     types::{Id, Priority, Uid},
 };
 
@@ -122,22 +122,25 @@ pub enum TaskDurationUnit {
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DueDate {
-    date: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    date: Option<String>,
     /// Human-readable representation of due date. String always represents the
     /// due object in user's timezone. Look at the Todoist docs to
     /// [see which formats are supported](https://www.todoist.com/help/todoist/features/schedule-a-date-and-time-for-your-todoist-tasks-q7VobO).
     pub string: String,
     /// Timezone of the due instance. Not public since timezone calculations
     /// can be handled through getters instead.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     timezone: Option<String>,
     /// Language which has to be used to parse the content of the string
     /// attribute. Used by clients and on the server side to properly process
     /// due dates when date object is not set, and when dealing with recurring
     /// tasks.
-    pub lang: Language,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lang: Option<Language>,
     /// Whether the due object represents a recurring due date.
-    pub is_recurring: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_recurring: Option<bool>,
 }
 
 impl DueDate {
@@ -146,10 +149,30 @@ impl DueDate {
     /// # Errors
     ///
     /// Returns an error if:
-    /// - `date` is an invalid timestamp.
     /// - Timezone is invalid.
     pub fn to_datetime(&self) -> Result<DueDateType> {
-        DueDateType::new(&self.date, self.timezone.as_deref())
+        DueDateType::new(
+            self.date.as_deref().ok_or_else(|| {
+                Error::Generic(String::from("due date does not have date string"))
+            })?,
+            self.timezone.as_deref(),
+        )
+    }
+
+    /// Intended to be used to create dates from natural language strings,
+    /// provided by the user when creating a task.
+    ///
+    /// See [Write Dates in Natural Language](https://www.todoist.com/help/todoist/features/schedule-a-date-and-time-for-your-todoist-tasks-q7VobO#h_01HD1A9MAEMR98FZT5FG6ZZB73)
+    /// for more.
+    #[must_use]
+    pub const fn from_natural_language_string(string: String) -> Self {
+        Self {
+            string,
+            date: None,
+            timezone: None,
+            lang: None,
+            is_recurring: None,
+        }
     }
 }
 
@@ -230,10 +253,10 @@ mod tests {
         #[test]
         fn to_datetime_full_day() {
             let due_date = DueDate {
-                date: "2016-12-06".to_string(),
+                date: Some("2016-12-06".to_string()),
                 timezone: None,
-                is_recurring: false,
-                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                is_recurring: Some(false),
+                lang: Some(Language::from_str("en").expect("en is a valid ISO 639 language code")),
                 string: String::from("tomorrow"),
             };
 
@@ -248,10 +271,10 @@ mod tests {
         #[test]
         fn to_datetime_floating_datetime() {
             let due_date = DueDate {
-                date: "2016-12-06T13:00:00".to_string(),
+                date: Some("2016-12-06T13:00:00".to_string()),
                 timezone: None,
-                is_recurring: false,
-                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                is_recurring: Some(false),
+                lang: Some(Language::from_str("en").expect("en is a valid ISO 639 language code")),
                 string: String::from("tomorrow"),
             };
 
@@ -269,10 +292,10 @@ mod tests {
         #[test]
         fn to_datetime_with_timezone() {
             let due_date = DueDate {
-                date: "2016-12-06T13:00:00.000000Z".to_string(),
+                date: Some("2016-12-06T13:00:00.000000Z".to_string()),
                 timezone: Some("Europe/Madrid".to_string()),
-                is_recurring: false,
-                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                is_recurring: Some(false),
+                lang: Some(Language::from_str("en").expect("en is a valid ISO 639 language code")),
                 string: String::from("tomorrow"),
             };
 
@@ -289,12 +312,24 @@ mod tests {
         }
 
         #[test]
+        fn datetime_missing_date() {
+            let due_date = DueDate::from_natural_language_string(String::from("tomorrow"));
+
+            // Should return an error since no date string exists
+            assert!(due_date.to_datetime().is_err());
+
+            let json = serde_json::to_string(&due_date)
+                .expect("due date should be successfully serialized");
+            assert_eq!(json, String::from(r#"{"string":"tomorrow"}"#));
+        }
+
+        #[test]
         fn to_datetime_invalid_date() {
             let due_date = DueDate {
-                date: "not-a-date".to_string(),
+                date: Some("not-a-date".to_string()),
                 timezone: None,
-                is_recurring: false,
-                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                is_recurring: Some(false),
+                lang: Some(Language::from_str("en").expect("en is a valid ISO 639 language code")),
                 string: String::from("tomorrow"),
             };
 
@@ -304,10 +339,10 @@ mod tests {
         #[test]
         fn to_datetime_invalid_timezone() {
             let due_date = DueDate {
-                date: "2016-12-06T13:00:00.000000Z".to_string(),
+                date: Some("2016-12-06T13:00:00.000000Z".to_string()),
                 timezone: Some("Not/A_Timezone".to_string()),
-                is_recurring: false,
-                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                is_recurring: Some(false),
+                lang: Some(Language::from_str("en").expect("en is a valid ISO 639 language code")),
                 string: String::from("tomorrow"),
             };
 
@@ -327,10 +362,10 @@ mod tests {
             content: String::from("Buy milk"),
             description: String::from("Pick up organic milk"),
             due: Some(DueDate {
-                date: String::from("2025-02-12"),
-                is_recurring: false,
+                date: Some(String::from("2025-02-12")),
+                is_recurring: Some(false),
                 timezone: None,
-                lang: Language::from_str("en").expect("en is a valid ISO 639 language code"),
+                lang: Some(Language::from_str("en").expect("en is a valid ISO 639 language code")),
                 string: String::from("tomorrow"),
             }),
             deadline: Some(Deadline {
