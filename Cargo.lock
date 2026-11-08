@@ -2099,6 +2099,7 @@ dependencies = [
  "ratatui-core",
  "ratatui-crossterm",
  "ratatui-widgets",
+ "regex",
  "unicode-segmentation",
  "unicode-width",
 ]
@@ -2980,6 +2981,7 @@ dependencies = [
  "pretty_assertions",
  "ratatui",
  "ratatui-textarea",
+ "regex",
  "todoist-sdk",
  "tokio",
 ]

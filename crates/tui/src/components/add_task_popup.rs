@@ -2,16 +2,27 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect},
-    style::Stylize,
+    style::{Style, Stylize},
     text::Span,
     widgets::{Block, Clear},
 };
 use ratatui_textarea::TextArea;
+use regex::Regex;
 
 use crate::{
     action::Action,
     components::{Component, activate, inactivate},
 };
+
+/// Selects every string starting with `\\`.
+const DATE_PATTERN: &str = r"\\.*";
+
+fn highlight_dates(textarea: &mut TextArea<'_>) {
+    textarea
+        .set_search_pattern(DATE_PATTERN)
+        .expect("DATE_PATTERN is a valid regex");
+    textarea.set_search_style(Style::new().on_red());
+}
 
 #[derive(Default, Debug)]
 pub struct AddTaskPopup<'a> {
@@ -25,7 +36,11 @@ impl<'a> AddTaskPopup<'a> {
     }
 
     pub fn content(&self) -> String {
-        self.content_textarea().lines().join("\n")
+        let re = Regex::new(DATE_PATTERN).expect("DATE_PATTERN is a valid regex");
+        let content = self.content_textarea().lines().join("\n");
+
+        // Remove date strings
+        re.replace_all(&content, "").into_owned()
     }
 
     pub fn desc(&self) -> Option<String> {
@@ -42,6 +57,19 @@ impl<'a> AddTaskPopup<'a> {
 
     const fn desc_textarea(&self) -> &TextArea<'a> {
         &self.textareas[1]
+    }
+
+    pub fn date_string(&self) -> Option<String> {
+        let re = Regex::new(DATE_PATTERN).expect("DATE_PATTERN is a valid regex");
+        let dates: String = self
+            .content_textarea()
+            .lines()
+            .iter()
+            .flat_map(|line| re.find_iter(line))
+            .map(|m| m.as_str().trim_matches('\\'))
+            .collect();
+
+        Some(dates).filter(|d| !d.is_empty())
     }
 
     const fn cycle_focus(&mut self) {
@@ -83,6 +111,7 @@ impl Component for AddTaskPopup<'_> {
         let desc_area = chunks[1];
 
         let mut content = self.content_textarea().to_owned();
+        highlight_dates(&mut content);
         if self.is_focused(0) {
             activate(&mut content, "Task name");
         } else {
