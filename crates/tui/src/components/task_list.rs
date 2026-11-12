@@ -34,6 +34,12 @@ impl TaskList {
         self.tasks = self.tasks.iter().filter(|t| &t.id != id).cloned().collect();
     }
 
+    pub fn update_task(&mut self, task: Task) {
+        if let Some(t) = self.tasks.iter_mut().find(|t| t.id == task.id) {
+            *t = task;
+        }
+    }
+
     pub fn focused_task(&self) -> Option<&Task> {
         // `.get()` here is more convenient
         self.tasks
@@ -102,6 +108,7 @@ impl Component for TaskList {
                 self.scroll_down();
                 None
             }
+            KeyCode::Char('e') => Some(Action::OpenEditTaskPopup),
             KeyCode::Enter => Some(Action::CompleteTask),
             _ => None,
         }
