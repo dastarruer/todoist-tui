@@ -1,17 +1,32 @@
+use std::sync::LazyLock;
+
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect},
-    style::Stylize,
+    style::{Style, Stylize},
     text::Span,
     widgets::{Block, Clear},
 };
 use ratatui_textarea::TextArea;
+use regex::Regex;
 
 use crate::{
     action::Action,
     components::{Component, activate, inactivate},
 };
+
+/// Selects every string starting with `\\`.
+const DATE_PATTERN: &str = r"\\\\.*";
+static DATE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(DATE_PATTERN).expect("DATE_PATTERN is a valid regex"));
+
+fn highlight_dates(textarea: &mut TextArea<'_>) {
+    textarea
+        .set_search_pattern(DATE_PATTERN)
+        .expect("DATE_PATTERN is a valid regex");
+    textarea.set_search_style(Style::new().on_red());
+}
 
 #[derive(Default, Debug)]
 pub struct AddTaskPopup<'a> {
@@ -25,7 +40,10 @@ impl<'a> AddTaskPopup<'a> {
     }
 
     pub fn content(&self) -> String {
-        self.content_textarea().lines().join("\n")
+        let content = self.content_textarea().lines().join("\n");
+
+        // Remove date strings
+        DATE_REGEX.replace_all(&content, "").into_owned()
     }
 
     pub fn desc(&self) -> Option<String> {
@@ -44,6 +62,18 @@ impl<'a> AddTaskPopup<'a> {
         &self.textareas[1]
     }
 
+    pub fn date_string(&self) -> Option<String> {
+        let dates: String = self
+            .content_textarea()
+            .lines()
+            .iter()
+            .flat_map(|line| DATE_REGEX.find_iter(line))
+            .map(|m| m.as_str().trim_matches('\\'))
+            .collect();
+
+        Some(dates).filter(|d| !d.is_empty())
+    }
+
     const fn cycle_focus(&mut self) {
         self.focused_index = match self.focused_index {
             0 => 1,
@@ -53,7 +83,7 @@ impl<'a> AddTaskPopup<'a> {
     }
 
     fn is_addable_task(&self) -> bool {
-        !self.content().is_empty()
+        !self.content().trim().is_empty()
     }
 }
 
@@ -83,6 +113,7 @@ impl Component for AddTaskPopup<'_> {
         let desc_area = chunks[1];
 
         let mut content = self.content_textarea().to_owned();
+        highlight_dates(&mut content);
         if self.is_focused(0) {
             activate(&mut content, "Task name");
         } else {
@@ -124,13 +155,26 @@ impl Component for AddTaskPopup<'_> {
 mod test {
     use super::*;
 
+    fn type_string_into_popup(popup: &mut AddTaskPopup, string: &str) {
+        string.chars().for_each(|c| {
+            popup.handle_key(KeyEvent::from(KeyCode::Char(c)));
+        });
+    }
+
     #[test]
     fn addable_tasks() {
         let mut popup = AddTaskPopup::new();
         assert!(!popup.is_addable_task());
 
-        popup.handle_key(KeyEvent::from(KeyCode::Char('c')));
+        type_string_into_popup(&mut popup, " ");
+        assert!(!popup.is_addable_task());
+
+        type_string_into_popup(&mut popup, "c");
         assert!(popup.is_addable_task());
+
+        let mut popup = AddTaskPopup::new();
+        type_string_into_popup(&mut popup, r" \\today");
+        assert!(!popup.is_addable_task());
     }
 
     #[test]

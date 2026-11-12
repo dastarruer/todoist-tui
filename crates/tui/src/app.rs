@@ -11,7 +11,11 @@ use todoist_sdk::{
         Command, CommandArgs,
         task::{AddTask, CompleteTask},
     },
-    types::{Id, task::Task, user::User},
+    types::{
+        Id,
+        task::{DueDate, Task},
+        user::User,
+    },
 };
 
 use crate::{
@@ -86,17 +90,9 @@ impl App<'_> {
                 }
             }
             Some(Action::AddTask) => {
-                self.add_task(
-                    self.add_task_popup
-                        .as_ref()
-                        .expect("popup should exist")
-                        .content(),
-                    self.add_task_popup
-                        .as_ref()
-                        .expect("popup should exist")
-                        .desc(),
-                )
-                .await?;
+                let popup = self.add_task_popup.as_ref().expect("popup should exist");
+                self.add_task(popup.content(), popup.desc(), popup.date_string())
+                    .await?;
             }
             Some(Action::Quit) => self.should_quit = true,
             None => {}
@@ -114,13 +110,16 @@ impl App<'_> {
         &mut self,
         content: String,
         description: Option<String>,
+        date_str: Option<String>,
     ) -> color_eyre::Result<()> {
+        let due = date_str.map(DueDate::from_natural_language_string);
         let description = description.unwrap_or_default();
         let task = Task::builder()
             .content(content)
             .description(description)
             .project_id(self.inbox_id.clone())
             .user_id(self.user.id.clone())
+            .maybe_due(due)
             .build();
         self.task_list.add_task(task.clone());
 
