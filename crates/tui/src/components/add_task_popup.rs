@@ -1,3 +1,5 @@
+use std::sync::LazyLock;
+
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     Frame,
@@ -16,6 +18,8 @@ use crate::{
 
 /// Selects every string starting with `\\`.
 const DATE_PATTERN: &str = r"\\\\.*";
+static DATE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(DATE_PATTERN).expect("DATE_PATTERN is a valid regex"));
 
 fn highlight_dates(textarea: &mut TextArea<'_>) {
     textarea
@@ -36,11 +40,10 @@ impl<'a> AddTaskPopup<'a> {
     }
 
     pub fn content(&self) -> String {
-        let re = Regex::new(DATE_PATTERN).expect("DATE_PATTERN is a valid regex");
         let content = self.content_textarea().lines().join("\n");
 
         // Remove date strings
-        re.replace_all(&content, "").into_owned()
+        DATE_REGEX.replace_all(&content, "").into_owned()
     }
 
     pub fn desc(&self) -> Option<String> {
@@ -60,12 +63,11 @@ impl<'a> AddTaskPopup<'a> {
     }
 
     pub fn date_string(&self) -> Option<String> {
-        let re = Regex::new(DATE_PATTERN).expect("DATE_PATTERN is a valid regex");
         let dates: String = self
             .content_textarea()
             .lines()
             .iter()
-            .flat_map(|line| re.find_iter(line))
+            .flat_map(|line| DATE_REGEX.find_iter(line))
             .map(|m| m.as_str().trim_matches('\\'))
             .collect();
 
