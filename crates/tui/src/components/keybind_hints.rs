@@ -28,6 +28,7 @@ impl Display for Action {
 #[derive(Debug)]
 pub struct KeybindHints {
     hints: Vec<(Key, Action)>,
+    hidden: bool,
 }
 
 impl KeybindHints {
@@ -37,12 +38,20 @@ impl KeybindHints {
             (Key(String::from("a")), Action(String::from("add"))),
             (Key(String::from("enter")), Action(String::from("complete"))),
         ];
-        Self { hints }
+        Self {
+            hints,
+            hidden: false,
+        }
     }
 
-    /// Push a new set of keybind hints.
-    pub fn push(&mut self, hints: Vec<(Key, Action)>) {
-        self.hints = hints;
+    /// Show keybind hints.
+    pub const fn hide(&mut self) {
+        self.hidden = true;
+    }
+
+    /// Show keybind hints.
+    pub const fn show(&mut self) {
+        self.hidden = false;
     }
 
     /// Return all keybind hints as a `Vec<Span>` to be used in ratatui
@@ -66,6 +75,10 @@ impl KeybindHints {
 
 impl Component for KeybindHints {
     fn draw(&self, frame: &mut ratatui::prelude::Frame, area: ratatui::prelude::Rect) {
+        if self.hidden {
+            return;
+        }
+
         let hints = Paragraph::new(Line::from(self.spans()));
         frame.render_widget(hints, area);
     }

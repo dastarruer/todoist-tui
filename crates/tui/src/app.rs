@@ -101,7 +101,7 @@ impl App<'_> {
     }
 
     fn start_adding_task(&mut self) {
-        self.hints.push(Vec::new());
+        self.hints.hide();
         self.view = ViewState::AddTask;
         self.add_task_popup = Some(AddTaskPopup::new());
     }
@@ -141,7 +141,7 @@ impl App<'_> {
     }
 
     fn cancel_adding_task(&mut self) {
-        self.hints = KeybindHints::new();
+        self.hints.show();
         self.view = ViewState::List;
         self.add_task_popup = None;
     }
