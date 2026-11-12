@@ -15,7 +15,7 @@ use crate::{
 };
 
 /// Selects every string starting with `\\`.
-const DATE_PATTERN: &str = r"\\.*";
+const DATE_PATTERN: &str = r"\\\\.*";
 
 fn highlight_dates(textarea: &mut TextArea<'_>) {
     textarea
