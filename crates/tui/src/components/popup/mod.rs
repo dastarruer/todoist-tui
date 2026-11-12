@@ -12,10 +12,14 @@ use regex::Regex;
 
 use crate::{
     action::Action,
-    components::{Component, popup::add_task_popup::AddTaskPopup},
+    components::{
+        Component,
+        popup::{add_task_popup::AddTaskPopup, edit_task_popup::EditTaskPopup},
+    },
 };
 
 pub mod add_task_popup;
+pub mod edit_task_popup;
 
 const DATE_PATTERN: &str = r"\\\\.*";
 /// Selects every string starting with `\\`.
@@ -24,19 +28,22 @@ pub static DATE_REGEX: LazyLock<Regex> =
 
 #[derive(Debug)]
 pub enum Popup<'a> {
-    Add(AddTaskPopup<'a>),
+    AddTask(AddTaskPopup<'a>),
+    EditTask(EditTaskPopup<'a>),
 }
 
 impl Component for Popup<'_> {
     fn handle_key(&mut self, event: KeyEvent) -> Option<Action> {
         match self {
-            Self::Add(p) => p.handle_key(event),
+            Self::AddTask(p) => p.handle_key(event),
+            Self::EditTask(p) => p.handle_key(event),
         }
     }
 
     fn draw(&self, frame: &mut Frame, area: Rect) {
         match self {
-            Self::Add(p) => p.draw(frame, area),
+            Self::AddTask(p) => p.draw(frame, area),
+            Self::EditTask(p) => p.draw(frame, area),
         }
     }
 }
@@ -48,19 +55,19 @@ pub struct TaskForm<'a> {
 }
 
 impl TaskForm<'_> {
-    fn new() -> Self {
-        let mut content = TextArea::default();
-        let mut desc = TextArea::default();
-
+    fn new(content: String, desc: &str) -> Self {
+        let mut content = TextArea::new(vec![content]);
         content
             .set_search_pattern(DATE_PATTERN)
             .expect("DATE_PATTERN is a valid regex");
         content.set_search_style(Style::new().on_red());
 
+        let desc = desc.split('\n').map(str::to_owned).collect();
+        let mut desc = TextArea::new(desc);
+
         activate(&mut content, "Task name");
         inactivate(&mut desc, "Description");
         let textareas = [content, desc];
-
         Self {
             textareas,
             ..Default::default()

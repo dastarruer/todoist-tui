@@ -23,7 +23,7 @@ pub struct AddTaskPopup<'a> {
 impl AddTaskPopup<'_> {
     pub fn new() -> Self {
         Self {
-            form: TaskForm::new(),
+            form: TaskForm::new(String::new(), ""),
         }
     }
 
@@ -69,7 +69,7 @@ impl Component for AddTaskPopup<'_> {
 
     fn handle_key(&mut self, event: KeyEvent) -> Option<Action> {
         match event.code {
-            KeyCode::Esc => Some(Action::CloseAddTaskModal),
+            KeyCode::Esc => Some(Action::ClosePopup),
             KeyCode::Enter
                 if event.modifiers.contains(KeyModifiers::ALT) && self.is_addable_task() =>
             {

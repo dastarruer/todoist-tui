@@ -9,7 +9,7 @@ use todoist_sdk::{
     APIClient, ResourceType,
     command::{
         Command, CommandArgs,
-        task::{AddTask, CompleteTask},
+        task::{AddTask, CompleteTask, UpdateTask},
     },
     types::{
         Id,
@@ -22,8 +22,8 @@ use crate::{
     action::Action,
     components::{
         Component,
-        keybind_hints::KeybindHints,
-        popup::{Popup, add_task_popup::AddTaskPopup},
+        keybind_hints::{ActionHint, Key, KeybindHints},
+        popup::{Popup, add_task_popup::AddTaskPopup, edit_task_popup::EditTaskPopup},
         task_list::TaskList,
     },
 };
@@ -48,8 +48,6 @@ pub struct App<'a> {
 
 impl App<'_> {
     pub async fn new(mut client: APIClient) -> color_eyre::Result<Self> {
-        let hints = KeybindHints::new();
-
         let resp = client
             .sync(vec![
                 ResourceType::Items,
@@ -71,6 +69,13 @@ impl App<'_> {
             .id
             .clone();
 
+        let mut hints = KeybindHints::new();
+        let task_list = TaskList::new(tasks);
+        let edit_hint = (Key(String::from("e")), ActionHint(String::from("edit")));
+        if task_list.focused_task().is_some() {
+            hints.push(vec![edit_hint]);
+        }
+
         Ok(Self {
             view: ViewState::List,
             should_quit: false,
@@ -78,26 +83,46 @@ impl App<'_> {
             inbox_id,
             user,
             client,
-            task_list: TaskList::new(tasks),
+            task_list,
             popup: None,
         })
     }
 
     pub async fn tick(&mut self, event: KeyEvent) -> color_eyre::Result<()> {
         match self.handle_key(event) {
-            Some(Action::OpenAddTaskModal) => self.start_adding_task(),
-            Some(Action::CloseAddTaskModal) => self.cancel_adding_task(),
+            Some(Action::OpenAddTaskPopup) => self.start_adding_task(),
+            Some(Action::ClosePopup) => self.close_popup(),
+            Some(Action::OpenEditTaskPopup) => self.start_editing_task(
+                self.task_list
+                    .focused_task()
+                    .expect("task should be highlighted to be able to edit")
+                    .to_owned(),
+            ),
             Some(Action::CompleteTask) => {
                 if let Some(task) = self.task_list.focused_task() {
                     self.complete_task(task.clone()).await?;
                 }
             }
             Some(Action::AddTask) => {
-                let Some(Popup::Add(popup)) = self.popup.as_ref() else {
+                let Some(Popup::AddTask(popup)) = self.popup.as_ref() else {
                     bail!("add task popup does not exist despite receiving `AddTask` action")
                 };
                 self.add_task(popup.content(), popup.desc(), popup.date_string())
                     .await?;
+            }
+            Some(Action::CompleteEditTask) => {
+                let Some(Popup::EditTask(popup)) = self.popup.as_ref() else {
+                    bail!(
+                        "add task popup does not exist despite receiving `CompleteEditTask` action"
+                    )
+                };
+                self.edit_task(
+                    popup.id().clone(),
+                    popup.content(),
+                    popup.desc(),
+                    popup.date_string(),
+                )
+                .await?;
             }
             Some(Action::Quit) => self.should_quit = true,
             None => {}
@@ -108,7 +133,7 @@ impl App<'_> {
     fn start_adding_task(&mut self) {
         self.hints.hide();
         self.view = ViewState::TaskPopup;
-        self.popup = Some(Popup::Add(AddTaskPopup::new()));
+        self.popup = Some(Popup::AddTask(AddTaskPopup::new()));
     }
 
     async fn add_task(
@@ -132,7 +157,34 @@ impl App<'_> {
         let resp = self.client.send(&[cmd]).await?;
         log::debug!("add task resp: {resp:#?}");
 
-        self.cancel_adding_task();
+        self.close_popup();
+        Ok(())
+    }
+
+    async fn edit_task(
+        &mut self,
+        id: Id,
+        content: String,
+        description: Option<String>,
+        date_str: Option<String>,
+    ) -> color_eyre::Result<()> {
+        let due = date_str.map(DueDate::from_natural_language_string);
+        let description = description.unwrap_or_default();
+        let task = Task::builder()
+            .id(id)
+            .content(content)
+            .description(description)
+            .project_id(self.inbox_id.clone())
+            .user_id(self.user.id.clone())
+            .maybe_due(due)
+            .build();
+
+        let cmd = Command::<Box<dyn CommandArgs>>::new(Box::new(UpdateTask::from(task.clone())));
+        let resp = self.client.send(&[cmd]).await?;
+        log::debug!("add task resp: {resp:#?}");
+
+        self.close_popup();
+        self.task_list.update_task(task);
         Ok(())
     }
 
@@ -145,10 +197,16 @@ impl App<'_> {
         Ok(())
     }
 
-    fn cancel_adding_task(&mut self) {
+    fn close_popup(&mut self) {
         self.hints.show();
         self.view = ViewState::List;
         self.popup = None;
+    }
+
+    fn start_editing_task(&mut self, task: Task) {
+        self.hints.hide();
+        self.view = ViewState::TaskPopup;
+        self.popup = Some(Popup::EditTask(EditTaskPopup::new(task)));
     }
 }
 
@@ -157,7 +215,7 @@ impl Component for App<'_> {
         if self.view == ViewState::List {
             match event.code {
                 KeyCode::Char('q') | KeyCode::Esc => return Some(Action::Quit),
-                KeyCode::Char('a') => return Some(Action::OpenAddTaskModal),
+                KeyCode::Char('a') => return Some(Action::OpenAddTaskPopup),
                 _ => {}
             }
         }

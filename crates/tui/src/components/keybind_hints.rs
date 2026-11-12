@@ -17,9 +17,9 @@ impl Display for Key {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Action(pub String);
+pub struct ActionHint(pub String);
 
-impl Display for Action {
+impl Display for ActionHint {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
@@ -27,21 +27,28 @@ impl Display for Action {
 
 #[derive(Debug)]
 pub struct KeybindHints {
-    hints: Vec<(Key, Action)>,
+    hints: Vec<(Key, ActionHint)>,
     hidden: bool,
 }
 
 impl KeybindHints {
     pub fn new() -> Self {
         let hints = vec![
-            (Key(String::from("j/k")), Action(String::from("move"))),
-            (Key(String::from("a")), Action(String::from("add"))),
-            (Key(String::from("enter")), Action(String::from("complete"))),
+            (Key(String::from("j/k")), ActionHint(String::from("move"))),
+            (Key(String::from("a")), ActionHint(String::from("add"))),
+            (
+                Key(String::from("enter")),
+                ActionHint(String::from("complete")),
+            ),
         ];
         Self {
             hints,
             hidden: false,
         }
+    }
+
+    pub fn push(&mut self, hints: Vec<(Key, ActionHint)>) {
+        self.hints.extend(hints);
     }
 
     /// Show keybind hints.
