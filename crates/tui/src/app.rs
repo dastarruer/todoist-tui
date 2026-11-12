@@ -1,4 +1,4 @@
-use color_eyre::eyre::OptionExt;
+use color_eyre::eyre::{OptionExt, bail};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
@@ -21,14 +21,17 @@ use todoist_sdk::{
 use crate::{
     action::Action,
     components::{
-        Component, add_task_popup::AddTaskPopup, keybind_hints::KeybindHints, task_list::TaskList,
+        Component,
+        keybind_hints::KeybindHints,
+        popup::{Popup, add_task_popup::AddTaskPopup},
+        task_list::TaskList,
     },
 };
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ViewState {
     List,
-    AddTask,
+    TaskPopup,
 }
 
 #[derive(Debug)]
@@ -40,7 +43,7 @@ pub struct App<'a> {
     user: User,
     client: APIClient,
     task_list: TaskList,
-    add_task_popup: Option<AddTaskPopup<'a>>,
+    popup: Option<Popup<'a>>,
 }
 
 impl App<'_> {
@@ -76,7 +79,7 @@ impl App<'_> {
             user,
             client,
             task_list: TaskList::new(tasks),
-            add_task_popup: None,
+            popup: None,
         })
     }
 
@@ -90,7 +93,9 @@ impl App<'_> {
                 }
             }
             Some(Action::AddTask) => {
-                let popup = self.add_task_popup.as_ref().expect("popup should exist");
+                let Some(Popup::Add(popup)) = self.popup.as_ref() else {
+                    bail!("add task popup does not exist despite receiving `AddTask` action")
+                };
                 self.add_task(popup.content(), popup.desc(), popup.date_string())
                     .await?;
             }
@@ -102,8 +107,8 @@ impl App<'_> {
 
     fn start_adding_task(&mut self) {
         self.hints.hide();
-        self.view = ViewState::AddTask;
-        self.add_task_popup = Some(AddTaskPopup::new());
+        self.view = ViewState::TaskPopup;
+        self.popup = Some(Popup::Add(AddTaskPopup::new()));
     }
 
     async fn add_task(
@@ -143,7 +148,7 @@ impl App<'_> {
     fn cancel_adding_task(&mut self) {
         self.hints.show();
         self.view = ViewState::List;
-        self.add_task_popup = None;
+        self.popup = None;
     }
 }
 
@@ -158,7 +163,7 @@ impl Component for App<'_> {
         }
         match self.view {
             ViewState::List => self.task_list.handle_key(event),
-            ViewState::AddTask => self.add_task_popup.as_mut()?.handle_key(event),
+            ViewState::TaskPopup => self.popup.as_mut()?.handle_key(event),
         }
     }
 
@@ -186,7 +191,7 @@ impl Component for App<'_> {
 
         self.hints.draw(frame, bind_hints_area);
 
-        if let Some(popup) = self.add_task_popup.as_ref() {
+        if let Some(popup) = self.popup.as_ref() {
             popup.draw(frame, area);
         }
     }
