@@ -83,7 +83,7 @@ impl<'a> AddTaskPopup<'a> {
     }
 
     fn is_addable_task(&self) -> bool {
-        !self.content().is_empty()
+        !self.content().trim().is_empty()
     }
 }
 
@@ -155,13 +155,26 @@ impl Component for AddTaskPopup<'_> {
 mod test {
     use super::*;
 
+    fn type_string_into_popup(popup: &mut AddTaskPopup, string: &str) {
+        string.chars().for_each(|c| {
+            popup.handle_key(KeyEvent::from(KeyCode::Char(c)));
+        });
+    }
+
     #[test]
     fn addable_tasks() {
         let mut popup = AddTaskPopup::new();
         assert!(!popup.is_addable_task());
 
-        popup.handle_key(KeyEvent::from(KeyCode::Char('c')));
+        type_string_into_popup(&mut popup, " ");
+        assert!(!popup.is_addable_task());
+
+        type_string_into_popup(&mut popup, "c");
         assert!(popup.is_addable_task());
+
+        let mut popup = AddTaskPopup::new();
+        type_string_into_popup(&mut popup, r" \\today");
+        assert!(!popup.is_addable_task());
     }
 
     #[test]
