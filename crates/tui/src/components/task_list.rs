@@ -42,8 +42,7 @@ impl TaskList {
 
     pub fn focused_task(&self) -> Option<&Task> {
         // `.get()` here is more convenient
-        self.tasks
-            .get(self.state.selected().expect("item should be selected"))
+        self.tasks.get(self.state.selected()?)
     }
 
     const fn scroll_up(&mut self) {
