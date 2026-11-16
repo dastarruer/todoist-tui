@@ -17,9 +17,9 @@ impl Display for Key {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Action(pub String);
+pub struct ActionHint(pub String);
 
-impl Display for Action {
+impl Display for ActionHint {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
@@ -27,22 +27,38 @@ impl Display for Action {
 
 #[derive(Debug)]
 pub struct KeybindHints {
-    hints: Vec<(Key, Action)>,
+    hints: Vec<(Key, ActionHint)>,
+    hidden: bool,
 }
 
 impl KeybindHints {
     pub fn new() -> Self {
         let hints = vec![
-            (Key(String::from("j/k")), Action(String::from("move"))),
-            (Key(String::from("a")), Action(String::from("add"))),
-            (Key(String::from("enter")), Action(String::from("complete"))),
+            (Key(String::from("j/k")), ActionHint(String::from("move"))),
+            (Key(String::from("a")), ActionHint(String::from("add"))),
+            (
+                Key(String::from("enter")),
+                ActionHint(String::from("complete")),
+            ),
         ];
-        Self { hints }
+        Self {
+            hints,
+            hidden: false,
+        }
     }
 
-    /// Push a new set of keybind hints.
-    pub fn push(&mut self, hints: Vec<(Key, Action)>) {
-        self.hints = hints;
+    pub fn push(&mut self, hints: Vec<(Key, ActionHint)>) {
+        self.hints.extend(hints);
+    }
+
+    /// Show keybind hints.
+    pub const fn hide(&mut self) {
+        self.hidden = true;
+    }
+
+    /// Show keybind hints.
+    pub const fn show(&mut self) {
+        self.hidden = false;
     }
 
     /// Return all keybind hints as a `Vec<Span>` to be used in ratatui
@@ -66,6 +82,10 @@ impl KeybindHints {
 
 impl Component for KeybindHints {
     fn draw(&self, frame: &mut ratatui::prelude::Frame, area: ratatui::prelude::Rect) {
+        if self.hidden {
+            return;
+        }
+
         let hints = Paragraph::new(Line::from(self.spans()));
         frame.render_widget(hints, area);
     }

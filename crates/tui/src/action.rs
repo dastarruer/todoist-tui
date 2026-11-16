@@ -1,8 +1,10 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Action {
     Quit,
-    OpenAddTaskModal,
-    CloseAddTaskModal,
+    OpenAddTaskPopup,
+    ClosePopup,
+    OpenEditTaskPopup,
+    CompleteEditTask,
     CompleteTask,
     AddTask,
 }
