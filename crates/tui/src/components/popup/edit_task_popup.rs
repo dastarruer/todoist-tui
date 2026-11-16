@@ -80,6 +80,7 @@ impl Component for EditTaskPopup<'_> {
     fn handle_key(&mut self, event: KeyEvent) -> Option<Action> {
         match event.code {
             KeyCode::Esc => Some(Action::ClosePopup),
+            KeyCode::Enter if self.form.focused_index == 0 => None, // Disable newlines for task content
             KeyCode::Enter
                 if event.modifiers.contains(KeyModifiers::ALT) && self.is_addable_task() =>
             {
