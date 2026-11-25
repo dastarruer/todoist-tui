@@ -5,6 +5,7 @@ use crate::action::Action;
 
 pub mod keybind_hints;
 pub mod popup;
+pub mod sidebar;
 pub mod task_list;
 
 pub trait Component {

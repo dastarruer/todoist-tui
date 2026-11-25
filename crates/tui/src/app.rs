@@ -3,7 +3,6 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, List, ListItem},
 };
 use todoist_sdk::{
     APIClient, ResourceType,
@@ -24,6 +23,7 @@ use crate::{
         Component,
         keybind_hints::{ActionHint, Key, KeybindHints},
         popup::{Popup, add_task_popup::AddTaskPopup, edit_task_popup::EditTaskPopup},
+        sidebar::Sidebar,
         task_list::TaskList,
     },
 };
@@ -44,6 +44,7 @@ pub struct App<'a> {
     client: APIClient,
     task_list: TaskList,
     popup: Option<Popup<'a>>,
+    sidebar: Sidebar,
 }
 
 impl App<'_> {
@@ -84,6 +85,7 @@ impl App<'_> {
             user,
             client,
             task_list,
+            sidebar: Sidebar,
             popup: None,
         })
     }
@@ -243,10 +245,7 @@ impl Component for App<'_> {
         let tasks_area = view[1];
 
         self.task_list.draw(frame, tasks_area);
-
-        let sidebar = List::new(Vec::<ListItem>::new()).block(Block::bordered());
-        frame.render_widget(sidebar, sidebar_area);
-
+        self.sidebar.draw(frame, sidebar_area);
         self.hints.draw(frame, bind_hints_area);
 
         if let Some(popup) = self.popup.as_ref() {
