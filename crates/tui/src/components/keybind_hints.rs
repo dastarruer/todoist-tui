@@ -51,6 +51,10 @@ impl KeybindHints {
         self.hints.extend(hints);
     }
 
+    pub fn replace(&mut self, hints: Vec<(Key, ActionHint)>) {
+        self.hints = hints;
+    }
+
     /// Show keybind hints.
     pub const fn hide(&mut self) {
         self.hidden = true;
