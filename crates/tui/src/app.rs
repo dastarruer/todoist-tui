@@ -71,6 +71,7 @@ impl App<'_> {
             .clone();
 
         let mut hints = KeybindHints::new();
+        let sidebar = Sidebar::new(projects);
         let task_list = TaskList::new(tasks);
         let edit_hint = (Key(String::from("e")), ActionHint(String::from("edit")));
         if task_list.focused_task().is_some() {
@@ -85,7 +86,7 @@ impl App<'_> {
             user,
             client,
             task_list,
-            sidebar: Sidebar,
+            sidebar,
             popup: None,
         })
     }
