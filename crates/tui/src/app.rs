@@ -3,7 +3,6 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, List, ListItem},
 };
 use todoist_sdk::{
     APIClient, ResourceType,
@@ -21,22 +20,24 @@ use todoist_sdk::{
 use crate::{
     action::Action,
     components::{
-        Component,
+        Component, Focusable,
         keybind_hints::{ActionHint, Key, KeybindHints},
         popup::{Popup, add_task_popup::AddTaskPopup, edit_task_popup::EditTaskPopup},
+        sidebar::Sidebar,
         task_list::TaskList,
     },
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum ViewState {
-    List,
-    TaskPopup,
+pub enum Focus {
+    TaskList,
+    Sidebar,
+    Popup,
 }
 
 #[derive(Debug)]
 pub struct App<'a> {
-    pub view: ViewState,
+    pub focus: Focus,
     pub should_quit: bool,
     hints: KeybindHints,
     inbox_id: Id,
@@ -44,6 +45,7 @@ pub struct App<'a> {
     client: APIClient,
     task_list: TaskList,
     popup: Option<Popup<'a>>,
+    sidebar: Sidebar,
 }
 
 impl App<'_> {
@@ -70,6 +72,7 @@ impl App<'_> {
             .clone();
 
         let mut hints = KeybindHints::new();
+        let sidebar = Sidebar::new(projects);
         let task_list = TaskList::new(tasks);
         let edit_hint = (Key(String::from("e")), ActionHint(String::from("edit")));
         if task_list.focused_task().is_some() {
@@ -77,13 +80,14 @@ impl App<'_> {
         }
 
         Ok(Self {
-            view: ViewState::List,
+            focus: Focus::TaskList,
             should_quit: false,
             hints,
             inbox_id,
             user,
             client,
             task_list,
+            sidebar,
             popup: None,
         })
     }
@@ -124,6 +128,21 @@ impl App<'_> {
                 )
                 .await?;
             }
+            Some(Action::FocusSidebar) => {
+                self.task_list.unfocus();
+                self.sidebar.focus();
+                self.hints.replace(vec![
+                    (Key(String::from("j/k")), ActionHint(String::from("move"))),
+                    (Key(String::from("enter")), ActionHint(String::from("open"))),
+                ]);
+                self.focus = Focus::Sidebar;
+            }
+            Some(Action::FocusTaskList) => {
+                self.sidebar.unfocus();
+                self.task_list.focus();
+                self.hints = KeybindHints::new();
+                self.focus = Focus::TaskList;
+            }
             Some(Action::Quit) => self.should_quit = true,
             None => {}
         }
@@ -132,7 +151,7 @@ impl App<'_> {
 
     fn start_adding_task(&mut self) {
         self.hints.hide();
-        self.view = ViewState::TaskPopup;
+        self.focus = Focus::Popup;
         self.popup = Some(Popup::AddTask(AddTaskPopup::new()));
     }
 
@@ -199,29 +218,29 @@ impl App<'_> {
 
     fn close_popup(&mut self) {
         self.hints.show();
-        self.view = ViewState::List;
+        self.focus = Focus::TaskList;
         self.popup = None;
     }
 
     fn start_editing_task(&mut self, task: Task) {
         self.hints.hide();
-        self.view = ViewState::TaskPopup;
+        self.focus = Focus::Popup;
         self.popup = Some(Popup::EditTask(EditTaskPopup::new(task)));
     }
 }
 
 impl Component for App<'_> {
     fn handle_key(&mut self, event: KeyEvent) -> Option<Action> {
-        if self.view == ViewState::List {
+        if self.focus != Focus::Popup {
             match event.code {
                 KeyCode::Char('q') | KeyCode::Esc => return Some(Action::Quit),
-                KeyCode::Char('a') => return Some(Action::OpenAddTaskPopup),
                 _ => {}
             }
         }
-        match self.view {
-            ViewState::List => self.task_list.handle_key(event),
-            ViewState::TaskPopup => self.popup.as_mut()?.handle_key(event),
+        match self.focus {
+            Focus::TaskList => self.task_list.handle_key(event),
+            Focus::Sidebar => self.sidebar.handle_key(event),
+            Focus::Popup => self.popup.as_mut()?.handle_key(event),
         }
     }
 
@@ -243,10 +262,7 @@ impl Component for App<'_> {
         let tasks_area = view[1];
 
         self.task_list.draw(frame, tasks_area);
-
-        let sidebar = List::new(Vec::<ListItem>::new()).block(Block::bordered());
-        frame.render_widget(sidebar, sidebar_area);
-
+        self.sidebar.draw(frame, sidebar_area);
         self.hints.draw(frame, bind_hints_area);
 
         if let Some(popup) = self.popup.as_ref() {

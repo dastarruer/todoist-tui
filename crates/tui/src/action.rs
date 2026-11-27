@@ -7,4 +7,6 @@ pub enum Action {
     CompleteEditTask,
     CompleteTask,
     AddTask,
+    FocusSidebar,
+    FocusTaskList,
 }
